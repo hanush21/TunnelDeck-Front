@@ -6,10 +6,10 @@ import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { loginSchema, type LoginSchema } from '@/modules/auth/schemas/login-schema'
 import { useAuth } from '@/modules/auth/hooks/use-auth'
-import { Button } from '@/shared/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/shared/components/ui/card'
-import { Input } from '@/shared/components/ui/input'
-import { Label } from '@/shared/components/ui/label'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -49,16 +49,17 @@ export function LoginPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-svh max-w-6xl items-center justify-center px-4 py-10">
-      <div className="grid w-full gap-6 lg:grid-cols-[1.2fr_1fr]">
-        <Card className="hidden border-primary/25 bg-gradient-to-b from-primary/15 to-card lg:block">
+    <div className="mx-auto flex min-h-svh max-w-6xl items-center justify-center px-4 py-8">
+      <div className="grid w-full gap-5 lg:grid-cols-[1.3fr_1fr]">
+        <Card className="hidden border-border/80 bg-card/80 shadow-2xl shadow-black/20 backdrop-blur-xl lg:block">
           <CardHeader>
-            <CardTitle className="text-3xl">TunnelDeck</CardTitle>
-            <CardDescription>Secure exposure management for your Docker services.</CardDescription>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-primary">TunnelDeck</p>
+            <CardTitle className="text-3xl">Secure Exposure Console</CardTitle>
+            <CardDescription>Minimal, reliable, backend-authorized control plane for service exposure.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-5 text-sm text-muted-foreground">
-            <p>Use your Firebase-backed admin account to access containers, exposures and audit trail.</p>
-            <div className="space-y-3 rounded-lg border bg-card/80 p-4">
+            <p>Use a trusted Firebase admin account to access dashboard, containers, exposures and audit logs.</p>
+            <div className="space-y-3 rounded-xl border border-border/70 bg-muted/35 p-4">
               <p className="font-medium text-foreground">Security model</p>
               <ul className="space-y-2">
                 <li className="flex items-center gap-2">
@@ -78,7 +79,7 @@ export function LoginPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-border/80 bg-card/82 shadow-2xl shadow-black/20 backdrop-blur-xl">
           <CardHeader>
             <CardTitle>Sign in</CardTitle>
             <CardDescription>Authenticate with Email/Password or Google account.</CardDescription>
@@ -97,7 +98,7 @@ export function LoginPage() {
                 {errors.password ? <p className="text-xs text-destructive">{errors.password.message}</p> : null}
               </div>
 
-              <Button className="w-full" disabled={isSubmitting} type="submit">
+              <Button className="w-full" disabled={isSubmitting} type="submit" variant="default">
                 {isSubmitting ? 'Signing in...' : 'Sign in with email'}
               </Button>
 

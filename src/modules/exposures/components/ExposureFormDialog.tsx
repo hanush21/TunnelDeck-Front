@@ -4,11 +4,11 @@ import { Controller, useForm } from 'react-hook-form'
 import type { ContainerDTO } from '@/modules/containers/types/container'
 import { exposureSchema, type ExposureSchema } from '@/modules/exposures/schemas/exposure-schemas'
 import type { UpsertExposureInput } from '@/modules/exposures/types/exposure'
-import { Button } from '@/shared/components/ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog'
-import { Input } from '@/shared/components/ui/input'
-import { Label } from '@/shared/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 type ExposureFormDialogProps = {
   open: boolean

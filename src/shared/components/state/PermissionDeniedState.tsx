@@ -1,5 +1,5 @@
 import { Lock } from 'lucide-react'
-import { Card, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/card'
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 export function PermissionDeniedState() {
   return (

@@ -1,5 +1,5 @@
-import { Card, CardContent, CardHeader } from '@/shared/components/ui/card'
-import { Skeleton } from '@/shared/components/ui/skeleton'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 
 export function LoadingState({ rows = 5 }: { rows?: number }) {
   return (
