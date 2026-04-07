@@ -25,7 +25,7 @@ const statusVariant = (status: string) => {
 }
 
 export function AuditPage() {
-  const auditQuery = useQuery({ queryKey: queryKeys.audit, queryFn: getAuditEntries })
+  const auditQuery = useQuery({ queryKey: queryKeys.audit, queryFn: () => getAuditEntries(100) })
 
   const rows = useMemo(
     () =>

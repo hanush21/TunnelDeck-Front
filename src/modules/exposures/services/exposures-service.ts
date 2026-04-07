@@ -3,45 +3,59 @@ import type { ExposureDTO, ExposureMutationInput } from '@/modules/exposures/typ
 import { httpRequest } from '@/shared/lib/http-client'
 
 const exposureApiSchema = z.object({
-  id: z.string(),
+  id: z.union([z.number().int(), z.string()]),
+  container_name: z.string(),
   hostname: z.string(),
-  protocol: z.enum(['http', 'https']),
-  containerId: z.string().optional(),
-  container_id: z.string().optional(),
-  port: z.number().int().positive(),
-  status: z.string(),
-  createdAt: z.string().optional(),
-  created_at: z.string().optional(),
-  updatedAt: z.string().optional(),
-  updated_at: z.string().optional(),
+  service_type: z.enum(['http', 'https']),
+  target_host: z.string(),
+  target_port: z.number().int().positive(),
+  enabled: z.boolean(),
+  created_by: z.string(),
+  created_at: z.string(),
+  updated_at: z.string(),
 })
 
-const exposureListApiSchema = z.array(exposureApiSchema)
+const exposureListResponseSchema = z.object({
+  items: z.array(exposureApiSchema),
+})
+
+const toPayload = (input: ExposureMutationInput) => ({
+  container_name: input.containerName,
+  hostname: input.hostname,
+  service_type: input.protocol,
+  target_host: input.targetHost,
+  target_port: input.port,
+  enabled: input.enabled,
+})
 
 export function mapExposureDto(payload: unknown): ExposureDTO {
   const parsed = exposureApiSchema.parse(payload)
 
   return {
-    id: parsed.id,
+    id: String(parsed.id),
+    containerName: parsed.container_name,
     hostname: parsed.hostname,
-    protocol: parsed.protocol,
-    containerId: parsed.containerId ?? parsed.container_id ?? '',
-    port: parsed.port,
-    status: parsed.status,
-    createdAt: parsed.createdAt ?? parsed.created_at ?? new Date(0).toISOString(),
-    updatedAt: parsed.updatedAt ?? parsed.updated_at ?? new Date(0).toISOString(),
+    protocol: parsed.service_type,
+    targetHost: parsed.target_host,
+    port: parsed.target_port,
+    enabled: parsed.enabled,
+    createdBy: parsed.created_by,
+    createdAt: parsed.created_at,
+    updatedAt: parsed.updated_at,
   }
 }
 
 export async function getExposures() {
   const payload = await httpRequest<unknown>('/exposures')
-  return exposureListApiSchema.parse(payload).map(mapExposureDto)
+  const parsed = exposureListResponseSchema.parse(payload)
+  return parsed.items.map(mapExposureDto)
 }
 
 export async function createExposure(input: ExposureMutationInput) {
   const payload = await httpRequest<unknown>('/exposures', {
     method: 'POST',
-    body: input,
+    body: toPayload(input),
+    headers: input.totpCode ? { 'X-TOTP-Code': input.totpCode } : undefined,
   })
 
   return mapExposureDto(payload)
@@ -49,8 +63,9 @@ export async function createExposure(input: ExposureMutationInput) {
 
 export async function updateExposure(exposureId: string, input: ExposureMutationInput) {
   const payload = await httpRequest<unknown>(`/exposures/${exposureId}`, {
-    method: 'PATCH',
-    body: input,
+    method: 'PUT',
+    body: toPayload(input),
+    headers: input.totpCode ? { 'X-TOTP-Code': input.totpCode } : undefined,
   })
 
   return mapExposureDto(payload)
@@ -59,6 +74,6 @@ export async function updateExposure(exposureId: string, input: ExposureMutation
 export async function deleteExposure(exposureId: string, totpCode?: string) {
   await httpRequest(`/exposures/${exposureId}`, {
     method: 'DELETE',
-    body: totpCode ? { totpCode } : undefined,
+    headers: totpCode ? { 'X-TOTP-Code': totpCode } : undefined,
   })
 }

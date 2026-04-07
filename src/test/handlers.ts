@@ -1,92 +1,143 @@
 import { HttpResponse, http } from 'msw'
 
-const API_BASE = 'http://localhost:8080'
+const API_HOST = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000').replace(/\/$/, '')
+const API_BASE = `${API_HOST}/api/v1`
+
+const exposureResponse = {
+  id: 1,
+  container_name: 'api',
+  hostname: 'api.example.com',
+  service_type: 'https',
+  target_host: 'localhost',
+  target_port: 443,
+  enabled: true,
+  created_by: 'admin@demo.com',
+  created_at: '2026-04-07T10:15:30',
+  updated_at: '2026-04-07T10:15:30',
+}
 
 export const handlers = [
   http.get(`${API_BASE}/dashboard/summary`, () =>
     HttpResponse.json({
-      backendHealth: 'healthy',
-      tunnelStatus: 'active',
-      totalContainers: 2,
-      totalPublicHostnames: 1,
+      exposures: { total: 1, enabled: 1 },
+      containers: { total: 2, running: 1 },
+      cloudflared: {
+        service_name: 'cloudflared',
+        status: 'active',
+        is_active: true,
+        config_exists: true,
+      },
     }),
   ),
+
   http.get(`${API_BASE}/containers`, () =>
-    HttpResponse.json([
-      {
-        id: 'container-1',
-        name: 'api',
-        image: 'nginx:latest',
-        status: 'running',
-        ports: ['80:80'],
-        uptime: '3h',
-      },
-      {
-        id: 'container-2',
-        name: 'worker',
-        image: 'node:20',
-        status: 'paused',
-        ports: [],
-        uptime: '1h',
-      },
-    ]),
+    HttpResponse.json({
+      items: [
+        {
+          id: 'container-1',
+          name: 'api',
+          image: 'nginx:latest',
+          state: 'running',
+          status: 'running',
+          published_ports: [
+            {
+              container_port: '80/tcp',
+              host_ip: '0.0.0.0',
+              host_port: '8080',
+            },
+          ],
+          labels: {},
+          networks: ['bridge'],
+          created_at: '2026-04-07T10:15:30+00:00',
+          started_at: '2026-04-07T10:20:00+00:00',
+        },
+        {
+          id: 'container-2',
+          name: 'worker',
+          image: 'node:20',
+          state: 'exited',
+          status: 'exited',
+          published_ports: [],
+          labels: {},
+          networks: ['bridge'],
+          created_at: '2026-04-07T10:15:30+00:00',
+          started_at: null,
+        },
+      ],
+    }),
   ),
-  http.get(`${API_BASE}/exposures`, () => HttpResponse.json([])),
+
+  http.get(`${API_BASE}/exposures`, () => HttpResponse.json({ items: [] })),
+
   http.post(`${API_BASE}/exposures`, async ({ request }) => {
     const body = (await request.json()) as Record<string, unknown>
+    const totp = request.headers.get('x-totp-code')
 
-    if (!body.totpCode) {
-      return HttpResponse.json({ code: 'TOTP_REQUIRED', message: 'TOTP required' }, { status: 401 })
+    if (!totp) {
+      return HttpResponse.json({ detail: 'Missing X-TOTP-Code header' }, { status: 403 })
     }
 
-    return HttpResponse.json({
-      id: 'exp-1',
-      hostname: body.hostname,
-      protocol: body.protocol,
-      containerId: body.containerId,
-      port: body.port,
-      status: 'active',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    })
-  }),
-  http.patch(`${API_BASE}/exposures/:id`, async ({ params, request }) => {
-    const body = (await request.json()) as Record<string, unknown>
-
-    if (!body.totpCode) {
-      return HttpResponse.json({ code: 'TOTP_REQUIRED', message: 'TOTP required' }, { status: 401 })
-    }
-
-    return HttpResponse.json({
-      id: params.id,
-      hostname: body.hostname,
-      protocol: body.protocol,
-      containerId: body.containerId,
-      port: body.port,
-      status: 'active',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    })
-  }),
-  http.delete(`${API_BASE}/exposures/:id`, async ({ request }) => {
-    const body = (await request.json().catch(() => ({}))) as Record<string, unknown>
-
-    if (!body.totpCode) {
-      return HttpResponse.json({ code: 'TOTP_REQUIRED', message: 'TOTP required' }, { status: 401 })
-    }
-
-    return HttpResponse.json({}, { status: 200 })
-  }),
-  http.get(`${API_BASE}/audit`, () =>
-    HttpResponse.json([
+    return HttpResponse.json(
       {
-        id: 'audit-1',
-        actor: 'admin@demo.com',
-        action: 'CREATE_EXPOSURE',
-        target: 'api.example.com',
-        timestamp: new Date().toISOString(),
-        status: 'success',
+        ...exposureResponse,
+        container_name: String(body.container_name),
+        hostname: String(body.hostname),
+        service_type: String(body.service_type),
+        target_host: String(body.target_host),
+        target_port: Number(body.target_port),
+        enabled: Boolean(body.enabled),
       },
-    ]),
+      { status: 201 },
+    )
+  }),
+
+  http.put(`${API_BASE}/exposures/:id`, async ({ params, request }) => {
+    const body = (await request.json()) as Record<string, unknown>
+    const totp = request.headers.get('x-totp-code')
+
+    if (!totp) {
+      return HttpResponse.json({ detail: 'Missing X-TOTP-Code header' }, { status: 403 })
+    }
+
+    return HttpResponse.json({
+      ...exposureResponse,
+      id: Number(params.id),
+      container_name: String(body.container_name),
+      hostname: String(body.hostname),
+      service_type: String(body.service_type),
+      target_host: String(body.target_host),
+      target_port: Number(body.target_port),
+      enabled: Boolean(body.enabled),
+    })
+  }),
+
+  http.delete(`${API_BASE}/exposures/:id`, ({ request }) => {
+    const totp = request.headers.get('x-totp-code')
+
+    if (!totp) {
+      return HttpResponse.json({ detail: 'Missing X-TOTP-Code header' }, { status: 403 })
+    }
+
+    return new HttpResponse(null, { status: 204 })
+  }),
+
+  http.get(`${API_BASE}/audit`, () =>
+    HttpResponse.json({
+      entries: [
+        {
+          id: 10,
+          actor_email: 'admin@demo.com',
+          action: 'exposure.create',
+          resource_type: 'exposure',
+          resource_id: '1',
+          success: true,
+          details: {
+            hostname: 'api.example.com',
+          },
+          error_message: null,
+          created_at: '2026-04-07T10:15:30',
+        },
+      ],
+    }),
   ),
 ]

@@ -5,62 +5,86 @@ import { mapDashboardSummaryDto } from '@/modules/dashboard/services/dashboard-s
 import { mapExposureDto } from '@/modules/exposures/services/exposures-service'
 
 describe('DTO mappers', () => {
-  it('maps dashboard summary with snake_case fallback', () => {
+  it('maps dashboard summary from nested contract shape', () => {
     const dto = mapDashboardSummaryDto({
-      backend_status: 'healthy',
-      tunnel_status: 'active',
-      total_containers: 7,
-      total_public_hostnames: 5,
+      exposures: { total: 3, enabled: 2 },
+      containers: { total: 10, running: 7 },
+      cloudflared: {
+        service_name: 'cloudflared',
+        status: 'active',
+        is_active: true,
+        config_exists: true,
+      },
     })
 
     expect(dto).toEqual({
-      backendHealth: 'healthy',
-      tunnelStatus: 'active',
-      totalContainers: 7,
-      totalPublicHostnames: 5,
+      totalContainers: 10,
+      runningContainers: 7,
+      totalExposures: 3,
+      enabledExposures: 2,
+      cloudflaredStatus: 'active',
+      cloudflaredActive: true,
+      cloudflaredConfigExists: true,
     })
   })
 
-  it('maps container ports from string', () => {
+  it('maps container published ports and uptime', () => {
     const dto = mapContainerDto({
       id: 'container-1',
       name: 'api',
       image: 'nginx',
+      state: 'running',
       status: 'running',
-      ports: '80:80',
-      uptime: 30,
+      published_ports: [
+        {
+          container_port: '80/tcp',
+          host_ip: '0.0.0.0',
+          host_port: '8080',
+        },
+      ],
+      created_at: '2026-01-01T00:00:00.000Z',
+      started_at: '2026-01-01T00:10:00.000Z',
     })
 
-    expect(dto.ports).toEqual(['80:80'])
-    expect(dto.uptime).toBe('30')
+    expect(dto.ports).toEqual(['0.0.0.0:8080 -> 80/tcp'])
+    expect(dto.createdAt).toBe('2026-01-01T00:00:00.000Z')
   })
 
-  it('maps exposure container_id fallback', () => {
+  it('maps exposure response contract', () => {
     const dto = mapExposureDto({
-      id: 'exp-1',
-      hostname: 'api.example.com',
-      protocol: 'https',
-      container_id: 'container-1',
-      port: 443,
-      status: 'active',
+      id: 1,
+      container_name: 'my-service',
+      hostname: 'app.example.com',
+      service_type: 'https',
+      target_host: 'localhost',
+      target_port: 443,
+      enabled: true,
+      created_by: 'admin@example.com',
       created_at: '2026-01-01T00:00:00.000Z',
       updated_at: '2026-01-02T00:00:00.000Z',
     })
 
-    expect(dto.containerId).toBe('container-1')
-    expect(dto.createdAt).toBe('2026-01-01T00:00:00.000Z')
+    expect(dto.id).toBe('1')
+    expect(dto.containerName).toBe('my-service')
+    expect(dto.protocol).toBe('https')
+    expect(dto.targetHost).toBe('localhost')
   })
 
-  it('maps audit timestamp fallback', () => {
+  it('maps audit contract entries', () => {
     const dto = mapAuditEntryDto({
-      id: 'audit-1',
-      actor: 'admin@demo.com',
-      action: 'DELETE_EXPOSURE',
-      target: 'api.example.com',
+      id: 10,
+      actor_email: 'admin@demo.com',
+      action: 'exposure.delete',
+      resource_type: 'exposure',
+      resource_id: '1',
+      success: false,
+      details: { hostname: 'app.example.com' },
+      error_message: 'some failure',
       created_at: '2026-01-01T00:00:00.000Z',
-      status: 'success',
     })
 
-    expect(dto.timestamp).toBe('2026-01-01T00:00:00.000Z')
+    expect(dto.actor).toBe('admin@demo.com')
+    expect(dto.target).toBe('app.example.com')
+    expect(dto.status).toContain('failed')
   })
 })

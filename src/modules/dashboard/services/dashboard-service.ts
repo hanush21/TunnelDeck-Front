@@ -3,24 +3,33 @@ import { httpRequest } from '@/shared/lib/http-client'
 import type { DashboardSummaryDTO } from '@/modules/dashboard/types/dashboard'
 
 const dashboardSummaryApiSchema = z.object({
-  backendHealth: z.string().optional(),
-  backend_status: z.string().optional(),
-  tunnelStatus: z.string().optional(),
-  tunnel_status: z.string().optional(),
-  totalContainers: z.number().int().nonnegative().optional(),
-  total_containers: z.number().int().nonnegative().optional(),
-  totalPublicHostnames: z.number().int().nonnegative().optional(),
-  total_public_hostnames: z.number().int().nonnegative().optional(),
+  exposures: z.object({
+    total: z.number().int().nonnegative(),
+    enabled: z.number().int().nonnegative(),
+  }),
+  containers: z.object({
+    total: z.number().int().nonnegative(),
+    running: z.number().int().nonnegative(),
+  }),
+  cloudflared: z.object({
+    service_name: z.string(),
+    status: z.string(),
+    is_active: z.boolean(),
+    config_exists: z.boolean(),
+  }),
 })
 
 export function mapDashboardSummaryDto(payload: unknown): DashboardSummaryDTO {
   const parsed = dashboardSummaryApiSchema.parse(payload)
 
   return {
-    backendHealth: parsed.backendHealth ?? parsed.backend_status ?? 'unknown',
-    tunnelStatus: parsed.tunnelStatus ?? parsed.tunnel_status ?? 'unknown',
-    totalContainers: parsed.totalContainers ?? parsed.total_containers ?? 0,
-    totalPublicHostnames: parsed.totalPublicHostnames ?? parsed.total_public_hostnames ?? 0,
+    totalContainers: parsed.containers.total,
+    runningContainers: parsed.containers.running,
+    totalExposures: parsed.exposures.total,
+    enabledExposures: parsed.exposures.enabled,
+    cloudflaredStatus: parsed.cloudflared.status,
+    cloudflaredActive: parsed.cloudflared.is_active,
+    cloudflaredConfigExists: parsed.cloudflared.config_exists,
   }
 }
 

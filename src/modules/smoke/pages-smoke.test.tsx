@@ -8,16 +8,19 @@ import { ExposuresPage } from '@/modules/exposures/pages/ExposuresPage'
 import { server } from '@/test/server'
 import { renderWithQueryClient } from '@/test/utils'
 
+const API_HOST = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000').replace(/\/$/, '')
+const API_BASE = `${API_HOST}/api/v1`
+
 describe('MVP page smoke states', () => {
   it('renders dashboard success state', async () => {
     renderWithQueryClient(<DashboardPage />)
 
     expect(await screen.findByText(/System Summary/i)).toBeInTheDocument()
-    expect(screen.getByText(/Backend Health/i)).toBeInTheDocument()
+    expect(screen.getByText(/Cloudflared Status/i)).toBeInTheDocument()
   })
 
   it('renders containers empty state', async () => {
-    server.use(http.get('http://localhost:8080/containers', () => HttpResponse.json([])))
+    server.use(http.get(`${API_BASE}/containers`, () => HttpResponse.json({ items: [] })))
 
     renderWithQueryClient(<ContainersPage />)
 

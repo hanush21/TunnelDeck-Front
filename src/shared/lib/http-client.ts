@@ -1,7 +1,7 @@
 import { env } from '@/shared/config/env'
 import type { ApiErrorCode } from '@/shared/types/api'
 
-type RequestMethod = 'GET' | 'POST' | 'PATCH' | 'DELETE'
+type RequestMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
 type TokenProvider = () => Promise<string | null>
 
@@ -40,16 +40,30 @@ export function setAuthTokenProvider(provider: TokenProvider) {
 
 const buildUrl = (path: string) => {
   const base = env.VITE_API_BASE_URL.endsWith('/') ? env.VITE_API_BASE_URL : `${env.VITE_API_BASE_URL}/`
-  return new URL(path.replace(/^\//, ''), base).toString()
+  const baseUrl = new URL(base)
+  const basePath = baseUrl.pathname.replace(/\/+$/, '')
+
+  const normalizedPath = path.startsWith('/api/') ? path : `/api/v1${path.startsWith('/') ? path : `/${path}`}`
+  const shouldStripApiPrefix = basePath.endsWith('/api/v1') && normalizedPath.startsWith('/api/v1/')
+  const relativePath = shouldStripApiPrefix ? normalizedPath.replace('/api/v1/', '') : normalizedPath.replace(/^\//, '')
+
+  return new URL(relativePath, base).toString()
 }
 
 const inferErrorCode = (status: number, payload: unknown): ApiErrorCode => {
+  const detail =
+    typeof payload === 'object' && payload !== null && 'detail' in payload ? String(payload.detail).toLowerCase() : ''
+
   if (
     typeof payload === 'object' &&
     payload !== null &&
     'code' in payload &&
     payload.code === 'TOTP_REQUIRED'
   ) {
+    return 'TOTP_REQUIRED'
+  }
+
+  if (status === 403 && (detail.includes('totp') || detail.includes('x-totp-code'))) {
     return 'TOTP_REQUIRED'
   }
 
@@ -105,8 +119,10 @@ export async function httpRequest<T>(path: string, options: RequestOptions = {})
   if (!response.ok) {
     const code = inferErrorCode(response.status, payload)
     const message =
-      typeof payload === 'object' && payload !== null && 'message' in payload
-        ? String(payload.message)
+      typeof payload === 'object' && payload !== null && 'detail' in payload
+        ? String(payload.detail)
+        : typeof payload === 'object' && payload !== null && 'message' in payload
+          ? String(payload.message)
         : `Request failed with status ${response.status}`
 
     throw new ApiError(code, response.status, payload, message)

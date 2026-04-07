@@ -13,7 +13,7 @@ const testDefaults = {
   VITE_FIREBASE_AUTH_DOMAIN: 'test-auth-domain',
   VITE_FIREBASE_PROJECT_ID: 'test-project-id',
   VITE_FIREBASE_APP_ID: 'test-app-id',
-  VITE_API_BASE_URL: 'http://localhost:8080',
+  VITE_API_BASE_URL: 'http://localhost:8000',
 }
 
 const parseEnv = () => {

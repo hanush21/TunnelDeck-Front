@@ -6,31 +6,40 @@ import { ExposuresPage } from './ExposuresPage'
 import { server } from '@/test/server'
 import { renderWithQueryClient } from '@/test/utils'
 
+const API_HOST = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000').replace(/\/$/, '')
+const API_BASE = `${API_HOST}/api/v1`
+
 describe('ExposuresPage', () => {
-  it('opens TOTP modal and retries mutation with code after TOTP_REQUIRED', async () => {
+  it('opens TOTP modal and retries mutation with X-TOTP-Code header', async () => {
     const user = userEvent.setup()
     let receivedTotpCode: string | null = null
 
     server.use(
-      http.post('http://localhost:8080/exposures', async ({ request }) => {
+      http.post(`${API_BASE}/exposures`, async ({ request }) => {
         const body = (await request.json()) as Record<string, unknown>
+        const totp = request.headers.get('x-totp-code')
 
-        if (!body.totpCode) {
-          return HttpResponse.json({ code: 'TOTP_REQUIRED', message: 'TOTP required' }, { status: 401 })
+        if (!totp) {
+          return HttpResponse.json({ detail: 'Missing X-TOTP-Code header' }, { status: 403 })
         }
 
-        receivedTotpCode = String(body.totpCode)
+        receivedTotpCode = totp
 
-        return HttpResponse.json({
-          id: 'exp-1',
-          hostname: body.hostname,
-          protocol: body.protocol,
-          containerId: body.containerId,
-          port: body.port,
-          status: 'active',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        })
+        return HttpResponse.json(
+          {
+            id: 1,
+            container_name: String(body.container_name),
+            hostname: String(body.hostname),
+            service_type: String(body.service_type),
+            target_host: String(body.target_host),
+            target_port: Number(body.target_port),
+            enabled: Boolean(body.enabled),
+            created_by: 'admin@demo.com',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          { status: 201 },
+        )
       }),
     )
 
@@ -40,8 +49,10 @@ describe('ExposuresPage', () => {
     await user.click(createButton)
 
     await user.type(screen.getByLabelText('Hostname'), 'api.example.com')
-    await user.clear(screen.getByLabelText('Port'))
-    await user.type(screen.getByLabelText('Port'), '443')
+    await user.clear(screen.getByLabelText('Target port'))
+    await user.type(screen.getByLabelText('Target port'), '443')
+    await user.clear(screen.getByLabelText('Target host'))
+    await user.type(screen.getByLabelText('Target host'), 'localhost')
 
     const comboboxes = screen.getAllByRole('combobox')
     await user.click(comboboxes[1])

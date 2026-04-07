@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Link2, Server, ShieldCheck, Waypoints } from 'lucide-react'
+import { Boxes, Gauge, Link2, ShieldCheck } from 'lucide-react'
 import { getDashboardSummary } from '@/modules/dashboard/services/dashboard-service'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -44,47 +44,61 @@ export function DashboardPage() {
     <div className="space-y-5">
       <div>
         <h3 className="text-2xl font-semibold">System Summary</h3>
-        <p className="text-sm text-muted-foreground">High-level health and exposure visibility.</p>
+        <p className="text-sm text-muted-foreground">Containers, exposures and cloudflared health from backend.</p>
       </div>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Backend Health</CardTitle>
-            <Server className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Cloudflared Status</CardTitle>
+            <Gauge className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <Badge {...badgeForStatus(summary.backendHealth)}>{summary.backendHealth}</Badge>
+          <CardContent className="space-y-2">
+            <Badge {...badgeForStatus(summary.cloudflaredStatus)}>{summary.cloudflaredStatus}</Badge>
+            <p className="text-xs text-muted-foreground">Config: {summary.cloudflaredConfigExists ? 'present' : 'missing'}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tunnel Status</CardTitle>
+            <CardTitle className="text-sm font-medium">Containers</CardTitle>
+            <Boxes className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-semibold">
+              {summary.runningContainers}
+              <span className="ml-1 text-base text-muted-foreground">/ {summary.totalContainers}</span>
+            </p>
+            <p className="text-xs text-muted-foreground">running / total</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Exposures</CardTitle>
             <Link2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <Badge {...badgeForStatus(summary.tunnelStatus)}>{summary.tunnelStatus}</Badge>
+            <p className="text-3xl font-semibold">
+              {summary.enabledExposures}
+              <span className="ml-1 text-base text-muted-foreground">/ {summary.totalExposures}</span>
+            </p>
+            <p className="text-xs text-muted-foreground">enabled / total</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Containers</CardTitle>
-            <Waypoints className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-semibold">{summary.totalContainers}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Public Hostnames</CardTitle>
+            <CardTitle className="text-sm font-medium">Tunnel Ready</CardTitle>
             <ShieldCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-semibold">{summary.totalPublicHostnames}</p>
+            <Badge
+              className={summary.cloudflaredActive ? 'bg-emerald-500/18 text-emerald-300 ring-1 ring-emerald-500/25' : undefined}
+              variant={summary.cloudflaredActive ? 'secondary' : 'destructive'}
+            >
+              {summary.cloudflaredActive ? 'yes' : 'no'}
+            </Badge>
           </CardContent>
         </Card>
       </section>

@@ -1,6 +1,9 @@
 export type DashboardSummaryDTO = {
-  backendHealth: string
-  tunnelStatus: string
   totalContainers: number
-  totalPublicHostnames: number
+  runningContainers: number
+  totalExposures: number
+  enabledExposures: number
+  cloudflaredStatus: string
+  cloudflaredActive: boolean
+  cloudflaredConfigExists: boolean
 }

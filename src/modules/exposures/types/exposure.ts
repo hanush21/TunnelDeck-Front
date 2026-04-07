@@ -2,20 +2,24 @@ export type ExposureProtocol = 'http' | 'https'
 
 export type ExposureDTO = {
   id: string
+  containerName: string
   hostname: string
   protocol: ExposureProtocol
-  containerId: string
+  targetHost: string
   port: number
-  status: string
+  enabled: boolean
+  createdBy: string
   createdAt: string
   updatedAt: string
 }
 
 export type UpsertExposureInput = {
+  containerName: string
   hostname: string
   protocol: ExposureProtocol
-  containerId: string
+  targetHost: string
   port: number
+  enabled: boolean
 }
 
 export type ExposureMutationInput = UpsertExposureInput & {

@@ -2,6 +2,9 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { getContainers } from '@/modules/containers/services/containers-service'
 import { ExposureFormDialog } from '@/modules/exposures/components/ExposureFormDialog'
 import {
@@ -12,8 +15,6 @@ import {
 } from '@/modules/exposures/services/exposures-service'
 import type { ExposureDTO, UpsertExposureInput } from '@/modules/exposures/types/exposure'
 import { TotpModal } from '@/modules/security/components/TotpModal'
-import { Button } from '@/components/ui/button'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { EmptyState } from '@/shared/components/state/EmptyState'
 import { ErrorState } from '@/shared/components/state/ErrorState'
 import { LoadingState } from '@/shared/components/state/LoadingState'
@@ -25,6 +26,11 @@ type PendingAction =
   | { type: 'create'; payload: UpsertExposureInput }
   | { type: 'update'; id: string; payload: UpsertExposureInput }
   | { type: 'delete'; id: string }
+
+const enabledBadge = (enabled: boolean) =>
+  enabled
+    ? { variant: 'secondary' as const, className: 'bg-emerald-500/18 text-emerald-300 ring-1 ring-emerald-500/25' }
+    : { variant: 'outline' as const, className: 'border-zinc-500/35 bg-zinc-500/12 text-zinc-300' }
 
 export function ExposuresPage() {
   const queryClient = useQueryClient()
@@ -211,9 +217,9 @@ export function ExposuresPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Hostname</TableHead>
-              <TableHead>Protocol</TableHead>
+              <TableHead>Service</TableHead>
               <TableHead>Container</TableHead>
-              <TableHead>Port</TableHead>
+              <TableHead>Target</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="w-[180px]">Actions</TableHead>
             </TableRow>
@@ -223,9 +229,13 @@ export function ExposuresPage() {
               <TableRow key={exposure.id}>
                 <TableCell className="font-medium">{exposure.hostname}</TableCell>
                 <TableCell className="uppercase">{exposure.protocol}</TableCell>
-                <TableCell>{exposure.containerId}</TableCell>
-                <TableCell>{exposure.port}</TableCell>
-                <TableCell>{exposure.status}</TableCell>
+                <TableCell>{exposure.containerName}</TableCell>
+                <TableCell>
+                  {exposure.targetHost}:{exposure.port}
+                </TableCell>
+                <TableCell>
+                  <Badge {...enabledBadge(exposure.enabled)}>{exposure.enabled ? 'enabled' : 'disabled'}</Badge>
+                </TableCell>
                 <TableCell>
                   <div className="flex gap-2">
                     <Button disabled={isMutating} onClick={() => setEditingExposure(exposure)} size="sm" variant="secondary">
@@ -249,7 +259,7 @@ export function ExposuresPage() {
 
       <ExposureFormDialog
         containers={containersQuery.data}
-        description="Create a new public hostname and map it to a container port."
+        description="Create a new public hostname and map it to a backend target."
         isSubmitting={isMutating}
         onOpenChange={setIsCreateOpen}
         onSubmit={executeCreate}
@@ -265,8 +275,10 @@ export function ExposuresPage() {
             ? {
                 hostname: editingExposure.hostname,
                 protocol: editingExposure.protocol,
-                containerId: editingExposure.containerId,
+                containerName: editingExposure.containerName,
+                targetHost: editingExposure.targetHost,
                 port: editingExposure.port,
+                enabled: editingExposure.enabled,
               }
             : undefined
         }

@@ -21,6 +21,15 @@ type ExposureFormDialogProps = {
   description: string
 }
 
+const defaultValues: UpsertExposureInput = {
+  hostname: '',
+  protocol: 'https',
+  containerName: '',
+  targetHost: 'localhost',
+  port: 80,
+  enabled: true,
+}
+
 export function ExposureFormDialog({
   open,
   onOpenChange,
@@ -39,12 +48,7 @@ export function ExposureFormDialog({
     formState: { errors },
   } = useForm<ExposureSchema>({
     resolver: zodResolver(exposureSchema),
-    defaultValues: initialValues ?? {
-      hostname: '',
-      protocol: 'https',
-      containerId: '',
-      port: 80,
-    },
+    defaultValues: initialValues ?? defaultValues,
   })
 
   useEffect(() => {
@@ -52,17 +56,10 @@ export function ExposureFormDialog({
       return
     }
 
-    reset(
-      initialValues ?? {
-        hostname: '',
-        protocol: 'https',
-        containerId: '',
-        port: 80,
-      },
-    )
+    reset(initialValues ?? defaultValues)
   }, [initialValues, open, reset])
 
-  const submitHandler = handleSubmit(async (values: ExposureSchema) => {
+  const submitHandler = handleSubmit(async (values) => {
     await onSubmit(values)
     onOpenChange(false)
   })
@@ -72,7 +69,7 @@ export function ExposureFormDialog({
       onOpenChange={(nextOpen) => {
         onOpenChange(nextOpen)
         if (!nextOpen) {
-          reset()
+          reset(defaultValues)
         }
       }}
       open={open}
@@ -86,20 +83,20 @@ export function ExposureFormDialog({
         <form className="space-y-4" onSubmit={submitHandler}>
           <div className="space-y-2">
             <Label htmlFor="hostname">Hostname</Label>
-            <Input id="hostname" placeholder="api.example.com" {...register('hostname')} />
+            <Input id="hostname" placeholder="app.example.com" {...register('hostname')} />
             {errors.hostname ? <p className="text-xs text-destructive">{errors.hostname.message}</p> : null}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label>Protocol</Label>
+              <Label>Service type</Label>
               <Controller
                 control={control}
                 name="protocol"
                 render={({ field }) => (
                   <Select onValueChange={field.onChange} value={field.value}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select protocol" />
+                      <SelectValue placeholder="Select service type" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="http">HTTP</SelectItem>
@@ -112,17 +109,23 @@ export function ExposureFormDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="port">Port</Label>
+              <Label htmlFor="port">Target port</Label>
               <Input id="port" type="number" {...register('port', { valueAsNumber: true })} />
               {errors.port ? <p className="text-xs text-destructive">{errors.port.message}</p> : null}
             </div>
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="targetHost">Target host</Label>
+            <Input id="targetHost" placeholder="localhost" {...register('targetHost')} />
+            {errors.targetHost ? <p className="text-xs text-destructive">{errors.targetHost.message}</p> : null}
+          </div>
+
+          <div className="space-y-2">
             <Label>Container</Label>
             <Controller
               control={control}
-              name="containerId"
+              name="containerName"
               render={({ field }) => (
                 <Select onValueChange={field.onChange} value={field.value}>
                   <SelectTrigger>
@@ -130,7 +133,7 @@ export function ExposureFormDialog({
                   </SelectTrigger>
                   <SelectContent>
                     {containers.map((container) => (
-                      <SelectItem key={container.id} value={container.id}>
+                      <SelectItem key={container.id} value={container.name}>
                         {container.name} ({container.image})
                       </SelectItem>
                     ))}
@@ -138,7 +141,14 @@ export function ExposureFormDialog({
                 </Select>
               )}
             />
-            {errors.containerId ? <p className="text-xs text-destructive">{errors.containerId.message}</p> : null}
+            {errors.containerName ? <p className="text-xs text-destructive">{errors.containerName.message}</p> : null}
+          </div>
+
+          <div className="flex items-center gap-2 rounded-md border border-border/80 px-3 py-2">
+            <input className="size-4" id="enabled" type="checkbox" {...register('enabled')} />
+            <Label className="cursor-pointer" htmlFor="enabled">
+              Exposure enabled
+            </Label>
           </div>
 
           <Button className="w-full" disabled={isSubmitting || containers.length === 0} type="submit">
