@@ -1,73 +1,104 @@
-# React + TypeScript + Vite
+# TunnelDeck Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend MVP para administrar exposiciones públicas de servicios Docker desde un panel web (sin terminal), con autenticación Firebase y backend como fuente de verdad.
 
-Currently, two official plugins are available:
+## Stack
+- React 19
+- TypeScript
+- Vite
+- Tailwind + componentes estilo shadcn
+- TanStack Query
+- React Hook Form + Zod
+- Firebase Auth
+- Vitest + RTL + MSW
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Requisitos
+- Node.js 20+
+- npm
+- Backend TunnelDeck corriendo
+- Proyecto Firebase configurado (Auth habilitado: Email/Password y Google)
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Setup
+1. Instala dependencias:
+```bash
+npm install
+```
+2. Crea tu `.env` desde `.env.example`:
+```bash
+cp .env.example .env
+```
+3. Completa variables:
+```env
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_APP_ID=
+VITE_API_BASE_URL=http://localhost:8000
+```
+4. Arranca en desarrollo:
+```bash
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Scripts
+- `npm run dev`: desarrollo
+- `npm run build`: build producción
+- `npm run preview`: previsualizar build
+- `npm run lint`: lint
+- `npm run test`: tests watch
+- `npm run test:run`: tests una pasada
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Rutas MVP
+- `/login`
+- `/`
+- `/containers`
+- `/exposures`
+- `/audit`
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Las rutas protegidas pasan por `ProtectedRoute` y requieren sesión Firebase activa.
+
+## Contrato API usado (actual)
+Base URL esperada: `VITE_API_BASE_URL`, con prefijo automático `/api/v1`.
+
+Endpoints integrados:
+- `GET /dashboard/summary`
+- `GET /containers`
+- `GET /exposures`
+- `POST /exposures` (Auth + `X-TOTP-Code`)
+- `PUT /exposures/{id}` (Auth + `X-TOTP-Code`)
+- `DELETE /exposures/{id}` (Auth + `X-TOTP-Code`)
+- `GET /audit?limit=100`
+
+Notas:
+- Requests protegidos envían `Authorization: Bearer <firebase_id_token>`.
+- El frontend detecta TOTP requerido por respuesta backend y abre modal para reintento con `X-TOTP-Code`.
+
+## Estructura
+```text
+src/
+  app/        # providers, guards, router, layout
+  modules/    # auth, dashboard, containers, exposures, security, audit
+  shared/     # config, cliente HTTP, tipos, estados reutilizables
+  test/       # setup Vitest + MSW handlers
 ```
+
+## Estado actual
+- MVP funcional implementado con flujo completo de exposición (create/edit/delete + TOTP backend-driven).
+- Estados UI cubiertos: loading, error, empty, success, disabled, permission-denied.
+- Verificación local actual:
+  - `npm run lint` OK
+  - `npm run test:run` OK
+  - `npm run build` OK
+
+## Pendientes principales
+- Integrar endpoints no usados aún:
+  - `GET /auth/me`
+  - `GET /containers/{container_id}`
+  - `POST /security/verify-totp` (si se decide validación previa explícita)
+- Mejorar mensajes UX para errores `409` y `503`.
+- Aplicar code splitting por rutas para reducir warning de chunk grande.
+
+## Seguridad
+- No guardar secretos privilegiados en frontend.
+- El frontend solo prueba identidad; backend decide autorización.
+- No hay comunicación directa con Docker/Cloudflare desde cliente.

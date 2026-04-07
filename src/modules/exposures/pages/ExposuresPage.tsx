@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Plus } from 'lucide-react'
+import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { getContainers } from '@/modules/containers/services/containers-service'
 import { ExposureFormDialog } from '@/modules/exposures/components/ExposureFormDialog'
@@ -29,8 +30,8 @@ type PendingAction =
 
 const enabledBadge = (enabled: boolean) =>
   enabled
-    ? { variant: 'secondary' as const, className: 'bg-emerald-500/18 text-emerald-300 ring-1 ring-emerald-500/25' }
-    : { variant: 'outline' as const, className: 'border-zinc-500/35 bg-zinc-500/12 text-zinc-300' }
+    ? { variant: 'secondary' as const, className: 'bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/20' }
+    : { variant: 'outline' as const, className: 'border-zinc-500/30 bg-zinc-500/10 text-zinc-400' }
 
 export function ExposuresPage() {
   const queryClient = useQueryClient()
@@ -110,7 +111,7 @@ export function ExposuresPage() {
   const executeCreate = async (values: UpsertExposureInput, totpCode?: string) => {
     try {
       await createMutation.mutateAsync({ ...values, totpCode })
-      toast.success('Exposure created successfully')
+      toast.success('Exposure created', { description: `${values.hostname} is now configured.` })
     } catch (error) {
       const controlled = requiresTotpFlow(error, { type: 'create', payload: values }, Boolean(totpCode))
       if (!controlled) {
@@ -122,7 +123,7 @@ export function ExposuresPage() {
   const executeUpdate = async (exposureId: string, values: UpsertExposureInput, totpCode?: string) => {
     try {
       await updateMutation.mutateAsync({ id: exposureId, values: { ...values, totpCode } })
-      toast.success('Exposure updated successfully')
+      toast.success('Exposure updated', { description: `${values.hostname} has been saved.` })
     } catch (error) {
       const controlled = requiresTotpFlow(error, { type: 'update', id: exposureId, payload: values }, Boolean(totpCode))
       if (!controlled) {
@@ -134,7 +135,7 @@ export function ExposuresPage() {
   const executeDelete = async (exposureId: string, totpCode?: string) => {
     try {
       await deleteMutation.mutateAsync({ id: exposureId, totpCode })
-      toast.success('Exposure deleted successfully')
+      toast.success('Exposure deleted', { description: 'The hostname has been removed.' })
     } catch (error) {
       const controlled = requiresTotpFlow(error, { type: 'delete', id: exposureId }, Boolean(totpCode))
       if (!controlled) {
@@ -189,14 +190,14 @@ export function ExposuresPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 className="text-2xl font-semibold">Exposures</h3>
-          <p className="text-sm text-muted-foreground">Manage public hostnames and container mappings.</p>
+          <h1 className="text-xl font-semibold text-foreground">Exposures</h1>
+          <p className="mt-0.5 text-sm text-muted-foreground">Manage public hostnames and container mappings.</p>
         </div>
 
-        <Button className="gap-2" disabled={isMutating} onClick={() => setIsCreateOpen(true)}>
+        <Button className="gap-2" disabled={isMutating} onClick={() => setIsCreateOpen(true)} size="sm">
           <Plus className="h-4 w-4" />
           New exposure
         </Button>
@@ -205,7 +206,7 @@ export function ExposuresPage() {
       {exposuresQuery.data.length === 0 ? (
         <EmptyState
           action={
-            <Button disabled={isMutating} onClick={() => setIsCreateOpen(true)}>
+            <Button disabled={isMutating} onClick={() => setIsCreateOpen(true)} size="sm">
               Create first exposure
             </Button>
           }
@@ -213,48 +214,70 @@ export function ExposuresPage() {
           title="No exposures"
         />
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Hostname</TableHead>
-              <TableHead>Service</TableHead>
-              <TableHead>Container</TableHead>
-              <TableHead>Target</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="w-[180px]">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {exposuresQuery.data.map((exposure) => (
-              <TableRow key={exposure.id}>
-                <TableCell className="font-medium">{exposure.hostname}</TableCell>
-                <TableCell className="uppercase">{exposure.protocol}</TableCell>
-                <TableCell>{exposure.containerName}</TableCell>
-                <TableCell>
-                  {exposure.targetHost}:{exposure.port}
-                </TableCell>
-                <TableCell>
-                  <Badge {...enabledBadge(exposure.enabled)}>{exposure.enabled ? 'enabled' : 'disabled'}</Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-2">
-                    <Button disabled={isMutating} onClick={() => setEditingExposure(exposure)} size="sm" variant="secondary">
-                      Edit
-                    </Button>
-                    <Button
-                      disabled={isMutating}
-                      onClick={() => executeDelete(exposure.id)}
-                      size="sm"
-                      variant="destructive"
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <Card className="border-border bg-card">
+          <CardHeader className="border-b border-border px-5 py-4">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              {exposuresQuery.data.length} exposure{exposuresQuery.data.length !== 1 ? 's' : ''} configured
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-b border-border hover:bg-transparent">
+                    <TableHead className="pl-5 text-xs">Hostname</TableHead>
+                    <TableHead className="text-xs">Service</TableHead>
+                    <TableHead className="text-xs">Container</TableHead>
+                    <TableHead className="text-xs">Target</TableHead>
+                    <TableHead className="text-xs">Status</TableHead>
+                    <TableHead className="pr-5 text-xs">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {exposuresQuery.data.map((exposure) => (
+                    <TableRow className="border-b border-border/50" key={exposure.id}>
+                      <TableCell className="pl-5 font-mono text-sm font-medium">{exposure.hostname}</TableCell>
+                      <TableCell>
+                        <span className="rounded border border-border bg-muted/50 px-1.5 py-0.5 font-mono text-xs uppercase text-muted-foreground">
+                          {exposure.protocol}
+                        </span>
+                      </TableCell>
+                      <TableCell className="font-mono text-xs text-muted-foreground">{exposure.containerName}</TableCell>
+                      <TableCell className="font-mono text-xs text-muted-foreground">
+                        {exposure.targetHost}:{exposure.port}
+                      </TableCell>
+                      <TableCell>
+                        <Badge {...enabledBadge(exposure.enabled)}>{exposure.enabled ? 'Enabled' : 'Disabled'}</Badge>
+                      </TableCell>
+                      <TableCell className="pr-5">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            className="h-7 gap-1.5 px-2 text-xs"
+                            disabled={isMutating}
+                            onClick={() => setEditingExposure(exposure)}
+                            variant="outline"
+                          >
+                            <Pencil className="h-3 w-3" />
+                            Edit
+                          </Button>
+                          <Button
+                            className="h-7 gap-1.5 px-2 text-xs"
+                            disabled={isMutating}
+                            onClick={() => executeDelete(exposure.id)}
+                            variant="destructive"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            Delete
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       <ExposureFormDialog

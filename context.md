@@ -1,236 +1,193 @@
 # TunnelDeck Frontend Context
 
-## Snapshot actual (2026-04-06)
-Este repositorio ya tiene un MVP funcional implementado con React + TypeScript + Vite, arquitectura modular por dominio y tests.
+## Snapshot actual (2026-04-07)
+MVP funcional en React + TypeScript + Vite, modular por dominio, con UI basada en componentes estilo shadcn y contrato de API ya alineado al backend actual (`/api/v1`).
 
-Estado verificado localmente:
-- `npm run build` OK
+Estado verificado:
 - `npm run lint` OK
-- `npm run test:run` OK
+- `npm run test:run` OK (16/16)
+- `npm run build` OK (con warnings CSS/chunk-size no bloqueantes)
 
 ---
 
 ## Objetivo del producto
-TunnelDeck es un panel privado para administración de exposiciones públicas de servicios en contenedores Docker.
+Panel admin privado para operar exposiciones públicas de servicios Docker sin usar terminal.
 
-El frontend permite a un admin autenticado:
-- iniciar sesión con Firebase Auth
-- ver contenedores detectados
-- ver hostnames/subdominios expuestos
-- crear/editar/eliminar exposiciones
-- confirmar acciones sensibles con TOTP (backend-driven)
-- consultar resumen de salud y auditoría
+El frontend hace:
+- identidad (Firebase Auth)
+- experiencia de administración (dashboard, containers, exposures, audit)
+- validaciones de UX (Zod)
 
-Frontend desplegable como app estática. Toda lógica privilegiada vive en backend.
+El backend decide:
+- autorización real (allowlist admin)
+- validaciones finales
+- verificación TOTP
+- ejecución operativa (Docker/cloudflared)
 
 ---
 
-## Alcance implementado
+## Estado por módulo
 
-### 1) Auth (`modules/auth`)
-Responsabilidades implementadas:
+### Auth (`src/modules/auth`) - Hecho
 - login Email/Password
-- login Google Sign-In
+- login Google
 - logout
-- suscripción a sesión Firebase
-- exposición de estado auth a toda la app
-- obtención de Firebase ID token para requests protegidos
+- sesión Firebase reactiva (`onAuthStateChanged`)
+- provider global de token para requests protegidos
 
-Archivos clave:
-- `src/modules/auth/context/AuthProvider.tsx`
-- `src/modules/auth/services/auth-service.ts`
-- `src/modules/auth/pages/LoginPage.tsx`
+### Dashboard (`src/modules/dashboard`) - Hecho
+- consume `GET /dashboard/summary`
+- muestra:
+  - total/running containers
+  - total/enabled exposures
+  - estado cloudflared (status, active, config_exists)
+- estados UI: loading, error, forbidden, success
 
-### 2) Dashboard (`modules/dashboard`)
-Responsabilidades implementadas:
-- vista resumen
-- cards de salud de backend/tunnel
-- total de contenedores
-- total de hostnames públicos
-- estados: loading/error/forbidden/success
+### Containers (`src/modules/containers`) - Hecho
+- consume `GET /containers`
+- mapea `published_ports`, `state`, `status`, timestamps y uptime
+- estados UI: loading, error, empty, forbidden, success
 
-### 3) Containers (`modules/containers`)
-Responsabilidades implementadas:
-- listado de contenedores
-- nombre, imagen, estado, puertos, uptime
-- estados: loading/error/empty/forbidden/success
+### Exposures (`src/modules/exposures`) - Hecho
+- `GET /exposures`
+- `POST /exposures` (Auth + `X-TOTP-Code`)
+- `PUT /exposures/{id}` (Auth + `X-TOTP-Code`)
+- `DELETE /exposures/{id}` (Auth + `X-TOTP-Code`)
+- formulario con Zod:
+  - hostname (normaliza a lowercase)
+  - protocol (`http|https`)
+  - containerName
+  - targetHost
+  - port
+  - enabled
+- flujo TOTP backend-driven:
+  - mutación sin TOTP
+  - si backend devuelve 403 por TOTP, abre modal
+  - reintenta mutación con header `X-TOTP-Code`
 
-### 4) Exposures (`modules/exposures`)
-Responsabilidades implementadas:
-- listado de exposiciones
-- create exposure
-- edit exposure
-- delete exposure
-- validación de formulario con Zod
-- manejo backend-driven de `TOTP_REQUIRED`
-- reintento de mutación tras confirmar código TOTP
+### Security (`src/modules/security`) - Hecho parcial
+- modal de TOTP
+- validación código 6 dígitos
+- pendiente: servicio dedicado para `POST /security/verify-totp` (ahora no se usa en frontend)
 
-### 5) Security (`modules/security`)
-Responsabilidades implementadas:
-- modal TOTP
-- validación de código TOTP (6 dígitos)
-
-### 6) Audit (`modules/audit`)
-Responsabilidades implementadas:
-- listado de acciones recientes
-- actor, acción, target, timestamp, status
-- estados: loading/error/empty/forbidden/success
+### Audit (`src/modules/audit`) - Hecho
+- consume `GET /audit?limit=100`
+- mapea `entries[]` a DTO de UI
+- estados UI: loading, error, empty, forbidden, success
 
 ---
 
 ## Routing actual
 - `/login`
-- `/` (dashboard)
+- `/`
 - `/containers`
 - `/exposures`
 - `/audit`
 
-Las rutas protegidas están detrás de `ProtectedRoute`.
-
-Archivo:
-- `src/app/router/index.tsx`
-
----
-
-## Arquitectura y organización
-
-Estructura real:
-- `src/app`: providers, guards, router, layout
-- `src/modules`: dominios (`auth`, `dashboard`, `containers`, `exposures`, `security`, `audit`)
-- `src/shared`: UI base, estados comunes, config, cliente HTTP, tipos, constantes
-- `src/test`: setup de tests + MSW
-
-Principios activos:
-- lógica de datos por dominio (services por módulo)
-- sin llamadas API dispersas en componentes de presentación
-- DTOs tipados + mappers tolerantes a camelCase/snake_case
+Todas las rutas salvo `/login` están detrás de `ProtectedRoute`.
 
 ---
 
 ## Infraestructura compartida
 
-### HTTP client central
-Archivo:
-- `src/shared/lib/http-client.ts`
+### HTTP client (`src/shared/lib/http-client.ts`)
+- base desde `VITE_API_BASE_URL`
+- prefija `/api/v1` automáticamente
+- evita doble prefijo si base ya incluye `/api/v1`
+- adjunta `Authorization: Bearer <firebase_id_token>` en requests protegidos
+- errores tipados:
+  - `UNAUTHORIZED`
+  - `FORBIDDEN`
+  - `VALIDATION_ERROR`
+  - `TOTP_REQUIRED`
+  - `UNKNOWN`
+- detección `TOTP_REQUIRED` por:
+  - `payload.code === "TOTP_REQUIRED"`
+  - o `403` con `detail` relacionado a TOTP / `X-TOTP-Code`
 
-Comportamiento:
-- usa `VITE_API_BASE_URL`
-- adjunta `Authorization: Bearer <firebase_id_token>` por defecto
-- errores tipados: `UNAUTHORIZED | FORBIDDEN | VALIDATION_ERROR | TOTP_REQUIRED | UNKNOWN`
+### Data fetching
+- TanStack Query global
+- invalidación tras mutaciones de exposures:
+  - `exposures`
+  - `dashboardSummary`
 
-### Query / cache
-- TanStack Query con `QueryClient` global
-- invalidaciones usadas en mutaciones de exposures para refrescar `exposures` y `dashboardSummary`
-
-### UI y estados
-- componentes UI reutilizables (estilo shadcn sobre Radix): button, card, table, dialog, select, input, badge, skeleton
-- estados reutilizables: loading, error, empty, permission denied
-- toasts con `sonner`
+### UI base
+- componentes usados: `button`, `card`, `table`, `dialog`, `input`, `select`, `badge`, `skeleton`, `sonner`
+- estados comunes reutilizables:
+  - `LoadingState`
+  - `ErrorState`
+  - `EmptyState`
+  - `PermissionDeniedState`
 
 ---
 
-## Contrato temporal de API (actual)
-> Es un contrato provisional hasta disponer de OpenAPI/backend contract definitivo.
+## Contrato API implementado en frontend
+Base esperada en env: `VITE_API_BASE_URL` (ejemplo `http://localhost:8000`).
+El cliente construye paths bajo `/api/v1`.
 
-Endpoints usados por frontend:
+Endpoints usados activamente:
 - `GET /dashboard/summary`
 - `GET /containers`
 - `GET /exposures`
 - `POST /exposures`
-- `PATCH /exposures/:id`
-- `DELETE /exposures/:id`
-- `GET /audit`
+- `PUT /exposures/{id}`
+- `DELETE /exposures/{id}`
+- `GET /audit?limit=100`
 
-Notas:
-- Mappers aceptan algunas variantes snake_case/camelCase para reducir retrabajo inicial.
-- Flujo TOTP depende de que backend responda error semántico con `code: "TOTP_REQUIRED"`.
-
----
-
-## Seguridad y límites del frontend
-
-Se mantiene:
-- frontend solo prueba identidad (Firebase)
-- autorización final siempre en backend
-- sin secretos privilegiados en cliente
-- sin comunicación directa con Docker/Cloudflare desde frontend
-- sin ejecución de comandos/shell desde frontend
-- sin UI de gestión de usuarios/admins
+Endpoints del contrato backend aún no consumidos en UI:
+- `GET /auth/me`
+- `GET /health/cloudflared` (el estado llega por summary, pero no endpoint dedicado)
+- `GET /containers/{container_id}`
+- `POST /security/verify-totp`
 
 ---
 
-## Validación de formularios (Zod)
+## Testing
+Stack:
+- Vitest
+- React Testing Library
+- MSW
+- JSDOM
 
-Implementado en cliente (UX):
-- login: email/password
-- exposure: hostname, protocol, containerId, port
-- totp: código de 6 dígitos
-
-Backend sigue siendo la fuente de verdad.
+Cobertura actual:
+- schemas Zod
+- mappers DTO
+- `ProtectedRoute`
+- auth header en HTTP client
+- `403` permission denied
+- flujo TOTP requerido y reintento con header
+- smoke tests de dashboard/containers/exposures/audit
 
 ---
 
-## Variables de entorno
-Archivo ejemplo:
-- `.env.example`
-
-Esperadas:
+## Variables de entorno requeridas
 - `VITE_FIREBASE_API_KEY`
 - `VITE_FIREBASE_AUTH_DOMAIN`
 - `VITE_FIREBASE_PROJECT_ID`
 - `VITE_FIREBASE_APP_ID`
 - `VITE_API_BASE_URL`
 
-`src/shared/config/env.ts` hace fail-fast fuera de modo test si falta/config inválida.
+`src/shared/config/env.ts` aplica validación/fail-fast fuera de modo test.
 
 ---
 
-## Tooling y comandos
-
-Scripts npm:
-- `npm run dev`
-- `npm run build`
-- `npm run preview`
-- `npm run lint`
-- `npm run test`
-- `npm run test:run`
-
-Testing stack:
-- Vitest + React Testing Library + MSW + JSDOM
-
-Cobertura funcional actual de tests:
-- schemas Zod
-- mappers DTO
-- guard de ruta protegida
-- auth header en cliente HTTP
-- estado `403` permission denied
-- flujo TOTP requerido y reintento de mutación
-- smoke tests de páginas principales
+## Pendiente para continuar
+1. Implementar servicios opcionales pendientes del contrato:
+   - `GET /auth/me`
+   - `GET /containers/{container_id}`
+   - `POST /security/verify-totp` (si se decide flujo preventivo además del backend-driven actual).
+2. Mejorar UX de seguridad:
+   - diálogo de confirmación antes de delete en exposures.
+3. Hardening de errores:
+   - mapear explícitamente `409` (hostname duplicado) y `503` (docker unavailable) a mensajes más específicos.
+4. Optimización de build:
+   - aplicar code splitting por rutas para reducir warning de chunk grande.
 
 ---
 
-## Pendiente para siguiente fase
-
-1. **Contrato backend oficial**
-   - sustituir contrato temporal por OpenAPI/contrato real
-   - ajustar mappers y tipos definitivos
-
-2. **Refinamiento UX de exposiciones**
-   - mostrar nombre de contenedor en tabla (no solo `containerId`) si backend lo entrega o mediante join local
-   - añadir confirm dialog explícito para delete (si se requiere UX adicional)
-
-3. **Optimización de bundle**
-   - hay warning de chunk grande en build
-   - considerar code-splitting por rutas
-
-4. **Hardening de errores backend**
-   - estandarizar shape de errores (`code`, `message`, `details`) para mejorar feedback de UI
-
----
-
-## No objetivo en este repo (por ahora)
+## Fuera de alcance (MVP)
 - gestión de usuarios/admins
-- signup público
-- edición directa de Docker/cloudflared/Cloudflare
-- consola/terminal embebida
-- YAML libre o infraestructura avanzada fuera de exposición de servicios
+- signup
+- comunicación directa con Docker/Cloudflare desde frontend
+- ejecución de comandos/shell
+- edición libre de YAML o infraestructura avanzada fuera de exposures

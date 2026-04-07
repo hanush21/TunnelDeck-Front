@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
-import { Boxes, Gauge, Link2, ShieldCheck } from 'lucide-react'
+import { Boxes, Gauge, Link2, RefreshCw, ShieldCheck } from 'lucide-react'
 import { getDashboardSummary } from '@/modules/dashboard/services/dashboard-service'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ErrorState } from '@/shared/components/state/ErrorState'
 import { LoadingState } from '@/shared/components/state/LoadingState'
@@ -13,14 +14,28 @@ const badgeForStatus = (value: string) => {
   const normalized = value.toLowerCase()
 
   if (['healthy', 'ok', 'up', 'online', 'active'].some((entry) => normalized.includes(entry))) {
-    return { variant: 'secondary' as const, className: 'bg-emerald-500/18 text-emerald-300 ring-1 ring-emerald-500/25' }
+    return { variant: 'secondary' as const, className: 'bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/20' }
   }
 
   if (['degraded', 'warning', 'unknown'].some((entry) => normalized.includes(entry))) {
-    return { variant: 'outline' as const, className: 'border-amber-500/35 bg-amber-500/12 text-amber-300' }
+    return { variant: 'outline' as const, className: 'border-amber-500/30 bg-amber-500/10 text-amber-400' }
   }
 
-  return { variant: 'destructive' as const, className: 'bg-red-500/15 text-red-300 ring-1 ring-red-500/20' }
+  return { variant: 'destructive' as const, className: 'bg-red-500/15 text-red-400 ring-1 ring-red-500/20' }
+}
+
+function StatusDot({ status }: { status: string }) {
+  const normalized = status.toLowerCase()
+
+  if (['healthy', 'ok', 'up', 'online', 'active'].some((entry) => normalized.includes(entry))) {
+    return <span className="h-2 w-2 rounded-full bg-emerald-400" />
+  }
+
+  if (['degraded', 'warning', 'unknown'].some((entry) => normalized.includes(entry))) {
+    return <span className="h-2 w-2 rounded-full bg-amber-400" />
+  }
+
+  return <span className="h-2 w-2 rounded-full bg-red-400" />
 }
 
 export function DashboardPage() {
@@ -41,67 +56,105 @@ export function DashboardPage() {
   const summary = summaryQuery.data
 
   return (
-    <div className="space-y-5">
-      <div>
-        <h3 className="text-2xl font-semibold">System Summary</h3>
-        <p className="text-sm text-muted-foreground">Containers, exposures and cloudflared health from backend.</p>
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-semibold text-foreground">System Overview</h1>
+          <p className="mt-0.5 text-sm text-muted-foreground">Containers, exposures, and tunnel health status.</p>
+        </div>
+        <Button
+          className="gap-2 text-xs"
+          disabled={summaryQuery.isFetching}
+          onClick={() => summaryQuery.refetch()}
+          size="sm"
+          variant="outline"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${summaryQuery.isFetching ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
       </div>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Cloudflared Status</CardTitle>
-            <Gauge className="h-4 w-4 text-muted-foreground" />
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <Card className="border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Cloudflared Status</CardTitle>
+            <div className="rounded-md border border-border bg-muted/50 p-1.5">
+              <Gauge className="h-3.5 w-3.5 text-muted-foreground" />
+            </div>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Badge {...badgeForStatus(summary.cloudflaredStatus)}>{summary.cloudflaredStatus}</Badge>
-            <p className="text-xs text-muted-foreground">Config: {summary.cloudflaredConfigExists ? 'present' : 'missing'}</p>
+            <div className="flex items-center gap-2">
+              <StatusDot status={summary.cloudflaredStatus} />
+              <Badge {...badgeForStatus(summary.cloudflaredStatus)}>{summary.cloudflaredStatus}</Badge>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Config:{' '}
+              <span className={summary.cloudflaredConfigExists ? 'text-emerald-400' : 'text-red-400'}>
+                {summary.cloudflaredConfigExists ? 'present' : 'missing'}
+              </span>
+            </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Containers</CardTitle>
-            <Boxes className="h-4 w-4 text-muted-foreground" />
+        <Card className="border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Containers</CardTitle>
+            <div className="rounded-md border border-border bg-muted/50 p-1.5">
+              <Boxes className="h-3.5 w-3.5 text-muted-foreground" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-semibold">
+          <CardContent className="space-y-1">
+            <p className="text-3xl font-bold tabular-nums text-foreground">
               {summary.runningContainers}
-              <span className="ml-1 text-base text-muted-foreground">/ {summary.totalContainers}</span>
+              <span className="ml-1.5 text-lg font-normal text-muted-foreground">/ {summary.totalContainers}</span>
             </p>
             <p className="text-xs text-muted-foreground">running / total</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Exposures</CardTitle>
-            <Link2 className="h-4 w-4 text-muted-foreground" />
+        <Card className="border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Exposures</CardTitle>
+            <div className="rounded-md border border-border bg-muted/50 p-1.5">
+              <Link2 className="h-3.5 w-3.5 text-muted-foreground" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-semibold">
+          <CardContent className="space-y-1">
+            <p className="text-3xl font-bold tabular-nums text-foreground">
               {summary.enabledExposures}
-              <span className="ml-1 text-base text-muted-foreground">/ {summary.totalExposures}</span>
+              <span className="ml-1.5 text-lg font-normal text-muted-foreground">/ {summary.totalExposures}</span>
             </p>
             <p className="text-xs text-muted-foreground">enabled / total</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tunnel Ready</CardTitle>
-            <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+        <Card className="border-border bg-card">
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Tunnel Ready</CardTitle>
+            <div className="rounded-md border border-border bg-muted/50 p-1.5">
+              <ShieldCheck className="h-3.5 w-3.5 text-muted-foreground" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <Badge
-              className={summary.cloudflaredActive ? 'bg-emerald-500/18 text-emerald-300 ring-1 ring-emerald-500/25' : undefined}
-              variant={summary.cloudflaredActive ? 'secondary' : 'destructive'}
-            >
-              {summary.cloudflaredActive ? 'yes' : 'no'}
-            </Badge>
+          <CardContent className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span
+                className={`h-2 w-2 rounded-full ${summary.cloudflaredActive ? 'bg-emerald-400' : 'bg-red-400'}`}
+              />
+              <Badge
+                className={
+                  summary.cloudflaredActive
+                    ? 'bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/20'
+                    : undefined
+                }
+                variant={summary.cloudflaredActive ? 'secondary' : 'destructive'}
+              >
+                {summary.cloudflaredActive ? 'Active' : 'Inactive'}
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground">Cloudflared tunnel process</p>
           </CardContent>
         </Card>
-      </section>
+      </div>
     </div>
   )
 }
