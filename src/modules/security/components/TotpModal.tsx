@@ -1,9 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { KeyRound } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { totpSchema, type TotpSchema } from '@/modules/security/schemas/totp-schema'
 
 type TotpModalProps = {
@@ -11,9 +11,10 @@ type TotpModalProps = {
   onOpenChange: (open: boolean) => void
   onSubmit: (totpCode: string) => Promise<void>
   isSubmitting?: boolean
+  actionContext?: string
 }
 
-export function TotpModal({ open, onOpenChange, onSubmit, isSubmitting = false }: TotpModalProps) {
+export function TotpModal({ open, onOpenChange, onSubmit, isSubmitting = false, actionContext }: TotpModalProps) {
   const {
     register,
     handleSubmit,
@@ -39,18 +40,36 @@ export function TotpModal({ open, onOpenChange, onSubmit, isSubmitting = false }
       }}
       open={open}
     >
-      <DialogContent>
+      <DialogContent className="sm:max-w-xs">
         <DialogHeader>
-          <DialogTitle>TOTP verification required</DialogTitle>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
+              <KeyRound className="h-5 w-5 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <DialogTitle>Two-factor verification</DialogTitle>
+              {actionContext && (
+                <p className="mt-0.5 truncate text-xs text-muted-foreground">{actionContext}</p>
+              )}
+            </div>
+          </div>
           <DialogDescription>
-            This operation is protected by two-factor verification. Enter your 6-digit authenticator code.
+            Enter the 6-digit code from your authenticator app to continue.
           </DialogDescription>
         </DialogHeader>
 
         <form className="space-y-4" onSubmit={submitHandler}>
           <div className="space-y-2">
-            <Label htmlFor="totpCode">TOTP code</Label>
-            <Input autoComplete="one-time-code" id="totpCode" placeholder="123456" {...register('totpCode')} />
+            <Input
+              autoComplete="one-time-code"
+              autoFocus
+              className="text-center font-mono text-lg tracking-[0.5em]"
+              id="totpCode"
+              inputMode="numeric"
+              maxLength={6}
+              placeholder="000000"
+              {...register('totpCode')}
+            />
             {errors.totpCode ? <p className="text-xs text-destructive">{errors.totpCode.message}</p> : null}
           </div>
 

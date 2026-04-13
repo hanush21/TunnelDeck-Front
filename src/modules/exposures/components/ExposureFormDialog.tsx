@@ -95,7 +95,7 @@ export function ExposureFormDialog({
                 name="protocol"
                 render={({ field }) => (
                   <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select service type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -128,7 +128,7 @@ export function ExposureFormDialog({
               name="containerName"
               render={({ field }) => (
                 <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a container" />
                   </SelectTrigger>
                   <SelectContent>

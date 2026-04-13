@@ -14,14 +14,14 @@ const badgeForStatus = (value: string) => {
   const normalized = value.toLowerCase()
 
   if (['healthy', 'ok', 'up', 'online', 'active'].some((entry) => normalized.includes(entry))) {
-    return { variant: 'secondary' as const, className: 'bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/20' }
+    return { variant: 'secondary' as const, className: 'bg-emerald-500/15 text-emerald-700 ring-1 ring-emerald-500/20' }
   }
 
   if (['degraded', 'warning', 'unknown'].some((entry) => normalized.includes(entry))) {
-    return { variant: 'outline' as const, className: 'border-amber-500/30 bg-amber-500/10 text-amber-400' }
+    return { variant: 'outline' as const, className: 'border-amber-500/30 bg-amber-500/10 text-amber-700' }
   }
 
-  return { variant: 'destructive' as const, className: 'bg-red-500/15 text-red-400 ring-1 ring-red-500/20' }
+  return { variant: 'destructive' as const, className: 'bg-red-500/15 text-red-700 ring-1 ring-red-500/20' }
 }
 
 function StatusDot({ status }: { status: string }) {
@@ -89,7 +89,7 @@ export function DashboardPage() {
             </div>
             <p className="text-xs text-muted-foreground">
               Config:{' '}
-              <span className={summary.cloudflaredConfigExists ? 'text-emerald-400' : 'text-red-400'}>
+              <span className={summary.cloudflaredConfigExists ? 'text-emerald-700' : 'text-red-600'}>
                 {summary.cloudflaredConfigExists ? 'present' : 'missing'}
               </span>
             </p>
@@ -143,7 +143,7 @@ export function DashboardPage() {
               <Badge
                 className={
                   summary.cloudflaredActive
-                    ? 'bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/20'
+                    ? 'bg-emerald-500/15 text-emerald-700 ring-1 ring-emerald-500/20'
                     : undefined
                 }
                 variant={summary.cloudflaredActive ? 'secondary' : 'destructive'}

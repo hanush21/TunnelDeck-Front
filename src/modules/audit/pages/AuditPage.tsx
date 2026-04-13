@@ -15,14 +15,14 @@ const statusVariant = (status: string) => {
   const normalized = status.toLowerCase()
 
   if (['ok', 'success', 'completed'].some((entry) => normalized.includes(entry))) {
-    return { variant: 'secondary' as const, className: 'bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/20' }
+    return { variant: 'secondary' as const, className: 'bg-emerald-500/15 text-emerald-700 ring-1 ring-emerald-500/20' }
   }
 
   if (['pending', 'in_progress'].some((entry) => normalized.includes(entry))) {
-    return { variant: 'outline' as const, className: 'border-amber-500/30 bg-amber-500/10 text-amber-400' }
+    return { variant: 'outline' as const, className: 'border-amber-500/30 bg-amber-500/10 text-amber-700' }
   }
 
-  return { variant: 'destructive' as const, className: 'bg-red-500/15 text-red-400 ring-1 ring-red-500/20' }
+  return { variant: 'destructive' as const, className: 'bg-red-500/15 text-red-700 ring-1 ring-red-500/20' }
 }
 
 export function AuditPage() {

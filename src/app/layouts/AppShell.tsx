@@ -16,8 +16,8 @@ function navLinkClass({ isActive }: { isActive: boolean }) {
   return cn(
     'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
     isActive
-      ? 'bg-primary/15 text-primary'
-      : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+      ? 'bg-sidebar-primary/20 text-sidebar-primary'
+      : 'text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
   )
 }
 
@@ -37,13 +37,13 @@ function SidebarContent({ user, logout, onNavClick }: SidebarContentProps) {
           </div>
           <div>
             <p className="text-sm font-semibold leading-none text-sidebar-foreground">TunnelDeck</p>
-            <p className="mt-0.5 text-[10px] text-muted-foreground">Control Panel</p>
+            <p className="mt-0.5 text-[10px] text-sidebar-foreground/50">Control Panel</p>
           </div>
         </div>
       </div>
 
       <nav className="flex-1 p-3">
-        <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
+        <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/30">
           Navigation
         </p>
         <ul className="space-y-0.5">
@@ -64,7 +64,7 @@ function SidebarContent({ user, logout, onNavClick }: SidebarContentProps) {
             <User className="h-3.5 w-3.5 text-muted-foreground" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] text-muted-foreground">Signed in as</p>
+            <p className="text-[10px] text-sidebar-foreground/50">Signed in as</p>
             <p className="truncate text-xs font-medium text-sidebar-foreground">{user?.email ?? 'Unknown'}</p>
           </div>
           <Button className="h-8 w-8 shrink-0 text-muted-foreground" onClick={logout} size="icon" title="Logout" variant="ghost">

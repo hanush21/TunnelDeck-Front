@@ -26,12 +26,12 @@ import { ApiError } from '@/shared/lib/http-client'
 type PendingAction =
   | { type: 'create'; payload: UpsertExposureInput }
   | { type: 'update'; id: string; payload: UpsertExposureInput }
-  | { type: 'delete'; id: string }
+  | { type: 'delete'; id: string; hostname: string }
 
 const enabledBadge = (enabled: boolean) =>
   enabled
-    ? { variant: 'secondary' as const, className: 'bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/20' }
-    : { variant: 'outline' as const, className: 'border-zinc-500/30 bg-zinc-500/10 text-zinc-400' }
+    ? { variant: 'secondary' as const, className: 'bg-emerald-500/15 text-emerald-700 ring-1 ring-emerald-500/20' }
+    : { variant: 'outline' as const, className: 'border-zinc-400/30 bg-zinc-500/10 text-zinc-600' }
 
 export function ExposuresPage() {
   const queryClient = useQueryClient()
@@ -68,99 +68,48 @@ export function ExposuresPage() {
     },
   })
 
-  const requiresTotpFlow = (error: unknown, action: PendingAction, hasCode: boolean) => {
-    if (!(error instanceof ApiError)) {
-      return false
-    }
-
-    if (error.code !== 'TOTP_REQUIRED') {
-      return false
-    }
-
-    if (hasCode) {
-      toast.error('TOTP verification failed', {
-        description: 'The provided code was rejected by backend.',
-      })
-      return true
-    }
-
-    setPendingAction(action)
-    setIsTotpOpen(true)
-
-    toast.info('Additional verification required', {
-      description: 'Enter your TOTP code to complete this operation.',
-    })
-
-    return true
-  }
-
-  const handleMutationError = (error: unknown) => {
-    if (error instanceof ApiError) {
-      if (error.code === 'FORBIDDEN') {
-        toast.error('Permission denied')
-        return
-      }
-
-      toast.error('Operation failed', { description: error.message })
-      return
-    }
-
-    toast.error('Operation failed', { description: 'Unexpected error while contacting backend.' })
-  }
-
-  const executeCreate = async (values: UpsertExposureInput, totpCode?: string) => {
-    try {
-      await createMutation.mutateAsync({ ...values, totpCode })
-      toast.success('Exposure created', { description: `${values.hostname} is now configured.` })
-    } catch (error) {
-      const controlled = requiresTotpFlow(error, { type: 'create', payload: values }, Boolean(totpCode))
-      if (!controlled) {
-        handleMutationError(error)
-      }
-    }
-  }
-
-  const executeUpdate = async (exposureId: string, values: UpsertExposureInput, totpCode?: string) => {
-    try {
-      await updateMutation.mutateAsync({ id: exposureId, values: { ...values, totpCode } })
-      toast.success('Exposure updated', { description: `${values.hostname} has been saved.` })
-    } catch (error) {
-      const controlled = requiresTotpFlow(error, { type: 'update', id: exposureId, payload: values }, Boolean(totpCode))
-      if (!controlled) {
-        handleMutationError(error)
-      }
-    }
-  }
-
-  const executeDelete = async (exposureId: string, totpCode?: string) => {
-    try {
-      await deleteMutation.mutateAsync({ id: exposureId, totpCode })
-      toast.success('Exposure deleted', { description: 'The hostname has been removed.' })
-    } catch (error) {
-      const controlled = requiresTotpFlow(error, { type: 'delete', id: exposureId }, Boolean(totpCode))
-      if (!controlled) {
-        handleMutationError(error)
-      }
-    }
-  }
+  const totpActionContext = pendingAction
+    ? pendingAction.type === 'create'
+      ? `Creating: ${pendingAction.payload.hostname}`
+      : pendingAction.type === 'update'
+        ? `Updating: ${pendingAction.payload.hostname}`
+        : `Deleting: ${pendingAction.hostname}`
+    : undefined
 
   const handleTotpConfirm = async (totpCode: string) => {
     if (!pendingAction) return
 
-    if (pendingAction.type === 'create') {
-      await executeCreate(pendingAction.payload, totpCode)
+    try {
+      if (pendingAction.type === 'create') {
+        await createMutation.mutateAsync({ ...pendingAction.payload, totpCode })
+        toast.success('Exposure created', { description: `${pendingAction.payload.hostname} is now configured.` })
+      } else if (pendingAction.type === 'update') {
+        await updateMutation.mutateAsync({ id: pendingAction.id, values: { ...pendingAction.payload, totpCode } })
+        toast.success('Exposure updated', { description: `${pendingAction.payload.hostname} has been saved.` })
+      } else {
+        await deleteMutation.mutateAsync({ id: pendingAction.id, totpCode })
+        toast.success('Exposure deleted', { description: 'The hostname has been removed.' })
+      }
+      setPendingAction(null)
+      setIsTotpOpen(false)
+    } catch (error) {
+      if (error instanceof ApiError && error.code === 'TOTP_REQUIRED') {
+        toast.error('Invalid TOTP code', {
+          description: 'The code was rejected by the server. Please try again.',
+        })
+        // Keep modal open — TotpModal resets the input automatically
+      } else if (error instanceof ApiError && error.code === 'FORBIDDEN') {
+        toast.error('Permission denied')
+        setPendingAction(null)
+        setIsTotpOpen(false)
+      } else {
+        toast.error('Operation failed', {
+          description: error instanceof ApiError ? error.message : 'Unexpected error while contacting backend.',
+        })
+        setPendingAction(null)
+        setIsTotpOpen(false)
+      }
     }
-
-    if (pendingAction.type === 'update') {
-      await executeUpdate(pendingAction.id, pendingAction.payload, totpCode)
-    }
-
-    if (pendingAction.type === 'delete') {
-      await executeDelete(pendingAction.id, totpCode)
-    }
-
-    setPendingAction(null)
-    setIsTotpOpen(false)
   }
 
   const isMutating = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending
@@ -263,7 +212,10 @@ export function ExposuresPage() {
                           <Button
                             className="h-7 gap-1.5 px-2 text-xs"
                             disabled={isMutating}
-                            onClick={() => executeDelete(exposure.id)}
+                            onClick={() => {
+                              setPendingAction({ type: 'delete', id: exposure.id, hostname: exposure.hostname })
+                              setIsTotpOpen(true)
+                            }}
                             variant="destructive"
                           >
                             <Trash2 className="h-3 w-3" />
@@ -285,7 +237,10 @@ export function ExposuresPage() {
         description="Create a new public hostname and map it to a backend target."
         isSubmitting={isMutating}
         onOpenChange={setIsCreateOpen}
-        onSubmit={executeCreate}
+        onSubmit={async (values) => {
+          setPendingAction({ type: 'create', payload: values })
+          setIsTotpOpen(true)
+        }}
         open={isCreateOpen}
         title="Create exposure"
       />
@@ -313,14 +268,15 @@ export function ExposuresPage() {
         }}
         onSubmit={async (values) => {
           if (!editingExposure) return
-          await executeUpdate(editingExposure.id, values)
-          setEditingExposure(null)
+          setPendingAction({ type: 'update', id: editingExposure.id, payload: values })
+          setIsTotpOpen(true)
         }}
         open={Boolean(editingExposure)}
         title="Edit exposure"
       />
 
       <TotpModal
+        actionContext={totpActionContext}
         isSubmitting={isMutating}
         onOpenChange={(open) => {
           setIsTotpOpen(open)

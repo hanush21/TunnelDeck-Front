@@ -50,45 +50,45 @@ export function LoginPage() {
   return (
     <div className="flex min-h-svh">
       {/* Left panel - branding */}
-      <div className="hidden flex-1 flex-col justify-between border-r border-border bg-sidebar p-10 lg:flex">
+      <div className="hidden flex-1 flex-col justify-between border-r border-sidebar-border bg-sidebar p-10 lg:flex">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-            <Shield className="h-5 w-5 text-primary-foreground" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sidebar-primary">
+            <Shield className="h-5 w-5 text-sidebar-primary-foreground" />
           </div>
           <div>
-            <p className="font-semibold leading-none text-foreground">TunnelDeck</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">Control Panel</p>
+            <p className="font-semibold leading-none text-sidebar-foreground">TunnelDeck</p>
+            <p className="mt-0.5 text-xs text-sidebar-foreground/50">Control Panel</p>
           </div>
         </div>
 
         <div className="space-y-6">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">Secure Exposure Console</h1>
-            <p className="mt-3 text-muted-foreground">
+            <h1 className="text-3xl font-bold tracking-tight text-sidebar-foreground">Secure Exposure Console</h1>
+            <p className="mt-3 text-sidebar-foreground/60">
               Minimal, reliable, backend-authorized control plane for service exposure.
             </p>
           </div>
 
-          <div className="space-y-3 rounded-lg border border-border bg-card p-5">
-            <p className="text-sm font-medium text-foreground">Security model</p>
+          <div className="space-y-3 rounded-lg border border-sidebar-border bg-sidebar-accent p-5">
+            <p className="text-sm font-medium text-sidebar-foreground">Security model</p>
             <ul className="space-y-3">
-              <li className="flex items-start gap-3 text-sm text-muted-foreground">
-                <Lock className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+              <li className="flex items-start gap-3 text-sm text-sidebar-foreground/70">
+                <Lock className="mt-0.5 h-4 w-4 shrink-0 text-sidebar-primary" />
                 Backend validates Firebase ID token against an admin allowlist.
               </li>
-              <li className="flex items-start gap-3 text-sm text-muted-foreground">
-                <Shield className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+              <li className="flex items-start gap-3 text-sm text-sidebar-foreground/70">
+                <Shield className="mt-0.5 h-4 w-4 shrink-0 text-sidebar-primary" />
                 Critical mutations are protected with TOTP verification.
               </li>
-              <li className="flex items-start gap-3 text-sm text-muted-foreground">
-                <Mail className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+              <li className="flex items-start gap-3 text-sm text-sidebar-foreground/70">
+                <Mail className="mt-0.5 h-4 w-4 shrink-0 text-sidebar-primary" />
                 No user management or signup is exposed in this panel.
               </li>
             </ul>
           </div>
         </div>
 
-        <p className="text-xs text-muted-foreground/60">Only trusted admin accounts can access this panel.</p>
+        <p className="text-xs text-sidebar-foreground/30">Only trusted admin accounts can access this panel.</p>
       </div>
 
       {/* Right panel - login form */}
