@@ -1,9 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
-import { Boxes, Gauge, Link2, RefreshCw, ShieldCheck } from 'lucide-react'
+import { RefreshCw } from 'lucide-react'
 import { getDashboardSummary } from '@/modules/dashboard/services/dashboard-service'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ErrorState } from '@/shared/components/state/ErrorState'
 import { LoadingState } from '@/shared/components/state/LoadingState'
 import { PermissionDeniedState } from '@/shared/components/state/PermissionDeniedState'
@@ -14,28 +12,28 @@ const badgeForStatus = (value: string) => {
   const normalized = value.toLowerCase()
 
   if (['healthy', 'ok', 'up', 'online', 'active'].some((entry) => normalized.includes(entry))) {
-    return { variant: 'secondary' as const, className: 'bg-emerald-500/15 text-emerald-700 ring-1 ring-emerald-500/20' }
+    return { variant: 'secondary' as const, className: 'bg-emerald-50 text-emerald-700 border border-emerald-200' }
   }
 
   if (['degraded', 'warning', 'unknown'].some((entry) => normalized.includes(entry))) {
-    return { variant: 'outline' as const, className: 'border-amber-500/30 bg-amber-500/10 text-amber-700' }
+    return { variant: 'outline' as const, className: 'bg-amber-50 text-amber-700 border border-amber-200' }
   }
 
-  return { variant: 'destructive' as const, className: 'bg-red-500/15 text-red-700 ring-1 ring-red-500/20' }
+  return { variant: 'destructive' as const, className: 'bg-red-50 text-red-700 border border-red-200' }
 }
 
 function StatusDot({ status }: { status: string }) {
   const normalized = status.toLowerCase()
 
   if (['healthy', 'ok', 'up', 'online', 'active'].some((entry) => normalized.includes(entry))) {
-    return <span className="h-2 w-2 rounded-full bg-emerald-400" />
+    return <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
   }
 
   if (['degraded', 'warning', 'unknown'].some((entry) => normalized.includes(entry))) {
-    return <span className="h-2 w-2 rounded-full bg-amber-400" />
+    return <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
   }
 
-  return <span className="h-2 w-2 rounded-full bg-red-400" />
+  return <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
 }
 
 export function DashboardPage() {
@@ -57,103 +55,72 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">System Overview</h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">Containers, exposures, and tunnel health status.</p>
+          <h1 className="text-base font-medium text-foreground">Overview</h1>
+          <p className="mt-0.5 text-sm text-muted-foreground">Containers, exposures, and tunnel health.</p>
         </div>
-        <Button
-          className="gap-2 text-xs"
+        <button
+          className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground disabled:opacity-50"
           disabled={summaryQuery.isFetching}
           onClick={() => summaryQuery.refetch()}
-          size="sm"
-          variant="outline"
+          type="button"
         >
-          <RefreshCw className={`h-3.5 w-3.5 ${summaryQuery.isFetching ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`h-3 w-3 ${summaryQuery.isFetching ? 'animate-spin' : ''}`} />
           Refresh
-        </Button>
+        </button>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Card className="border-border bg-card">
-          <CardHeader className="flex flex-row items-center justify-between pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Cloudflared Status</CardTitle>
-            <div className="rounded-md border border-border bg-muted/50 p-1.5">
-              <Gauge className="h-3.5 w-3.5 text-muted-foreground" />
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex items-center gap-2">
-              <StatusDot status={summary.cloudflaredStatus} />
-              <Badge {...badgeForStatus(summary.cloudflaredStatus)}>{summary.cloudflaredStatus}</Badge>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Config:{' '}
-              <span className={summary.cloudflaredConfigExists ? 'text-emerald-700' : 'text-red-600'}>
-                {summary.cloudflaredConfigExists ? 'present' : 'missing'}
-              </span>
-            </p>
-          </CardContent>
-        </Card>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-lg border border-border bg-card p-5">
+          <p className="text-xs text-muted-foreground">Cloudflared</p>
+          <div className="mt-3 flex items-center gap-2">
+            <StatusDot status={summary.cloudflaredStatus} />
+            <Badge {...badgeForStatus(summary.cloudflaredStatus)}>{summary.cloudflaredStatus}</Badge>
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Config{' '}
+            <span className={summary.cloudflaredConfigExists ? 'text-emerald-500' : 'text-red-500'}>
+              {summary.cloudflaredConfigExists ? 'present' : 'missing'}
+            </span>
+          </p>
+        </div>
 
-        <Card className="border-border bg-card">
-          <CardHeader className="flex flex-row items-center justify-between pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Containers</CardTitle>
-            <div className="rounded-md border border-border bg-muted/50 p-1.5">
-              <Boxes className="h-3.5 w-3.5 text-muted-foreground" />
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-1">
-            <p className="text-3xl font-bold tabular-nums text-foreground">
-              {summary.runningContainers}
-              <span className="ml-1.5 text-lg font-normal text-muted-foreground">/ {summary.totalContainers}</span>
-            </p>
-            <p className="text-xs text-muted-foreground">running / total</p>
-          </CardContent>
-        </Card>
+        <div className="rounded-lg border border-border bg-card p-5">
+          <p className="text-xs text-muted-foreground">Containers</p>
+          <p className="mt-3 text-3xl font-semibold tabular-nums text-foreground">
+            {summary.runningContainers}
+            <span className="ml-1.5 text-base font-normal text-muted-foreground">/ {summary.totalContainers}</span>
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">running / total</p>
+        </div>
 
-        <Card className="border-border bg-card">
-          <CardHeader className="flex flex-row items-center justify-between pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Exposures</CardTitle>
-            <div className="rounded-md border border-border bg-muted/50 p-1.5">
-              <Link2 className="h-3.5 w-3.5 text-muted-foreground" />
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-1">
-            <p className="text-3xl font-bold tabular-nums text-foreground">
-              {summary.enabledExposures}
-              <span className="ml-1.5 text-lg font-normal text-muted-foreground">/ {summary.totalExposures}</span>
-            </p>
-            <p className="text-xs text-muted-foreground">enabled / total</p>
-          </CardContent>
-        </Card>
+        <div className="rounded-lg border border-border bg-card p-5">
+          <p className="text-xs text-muted-foreground">Exposures</p>
+          <p className="mt-3 text-3xl font-semibold tabular-nums text-foreground">
+            {summary.enabledExposures}
+            <span className="ml-1.5 text-base font-normal text-muted-foreground">/ {summary.totalExposures}</span>
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">enabled / total</p>
+        </div>
 
-        <Card className="border-border bg-card">
-          <CardHeader className="flex flex-row items-center justify-between pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Tunnel Ready</CardTitle>
-            <div className="rounded-md border border-border bg-muted/50 p-1.5">
-              <ShieldCheck className="h-3.5 w-3.5 text-muted-foreground" />
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span
-                className={`h-2 w-2 rounded-full ${summary.cloudflaredActive ? 'bg-emerald-400' : 'bg-red-400'}`}
-              />
-              <Badge
-                className={
-                  summary.cloudflaredActive
-                    ? 'bg-emerald-500/15 text-emerald-700 ring-1 ring-emerald-500/20'
-                    : undefined
-                }
-                variant={summary.cloudflaredActive ? 'secondary' : 'destructive'}
-              >
-                {summary.cloudflaredActive ? 'Active' : 'Inactive'}
-              </Badge>
-            </div>
-            <p className="text-xs text-muted-foreground">Cloudflared tunnel process</p>
-          </CardContent>
-        </Card>
+        <div className="rounded-lg border border-border bg-card p-5">
+          <p className="text-xs text-muted-foreground">Tunnel</p>
+          <div className="mt-3 flex items-center gap-2">
+            <span className={`h-2 w-2 rounded-full ${summary.cloudflaredActive ? 'bg-emerald-500' : 'bg-red-500'}`} />
+            <Badge
+              className={
+                summary.cloudflaredActive
+                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                  : 'bg-red-50 text-red-700 border border-red-200'
+              }
+              variant={summary.cloudflaredActive ? 'secondary' : 'destructive'}
+            >
+              {summary.cloudflaredActive ? 'Active' : 'Inactive'}
+            </Badge>
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">Cloudflared process</p>
+        </div>
       </div>
     </div>
   )

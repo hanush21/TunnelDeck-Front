@@ -43,9 +43,7 @@ export function TotpModal({ open, onOpenChange, onSubmit, isSubmitting = false, 
       <DialogContent className="sm:max-w-xs">
         <DialogHeader>
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
-              <KeyRound className="h-5 w-5 text-primary" />
-            </div>
+            <KeyRound className="h-4 w-4 shrink-0 text-muted-foreground" />
             <div className="min-w-0">
               <DialogTitle>Two-factor verification</DialogTitle>
               {actionContext && (

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Activity, Boxes, ChartNoAxesCombined, ChevronRight, Link2, LogOut, Menu, Shield, User, X } from 'lucide-react'
+import { Activity, Boxes, ChartNoAxesCombined, Link2, LogOut, Menu, Shield, X } from 'lucide-react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '@/modules/auth/hooks/use-auth'
 import { Button } from '@/components/ui/button'
@@ -14,10 +14,10 @@ const navItems = [
 
 function navLinkClass({ isActive }: { isActive: boolean }) {
   return cn(
-    'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+    'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors',
     isActive
-      ? 'bg-sidebar-primary/20 text-sidebar-primary'
-      : 'text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+      ? 'bg-sidebar-accent text-sidebar-foreground font-medium'
+      : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground',
   )
 }
 
@@ -30,22 +30,14 @@ type SidebarContentProps = {
 function SidebarContent({ user, logout, onNavClick }: SidebarContentProps) {
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-14 shrink-0 items-center border-b border-sidebar-border px-5">
+      <div className="flex h-14 shrink-0 items-center px-5">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary">
-            <Shield className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold leading-none text-sidebar-foreground">TunnelDeck</p>
-            <p className="mt-0.5 text-[10px] text-sidebar-foreground/50">Control Panel</p>
-          </div>
+          <Shield className="h-5 w-5 shrink-0 text-muted-foreground" />
+          <span className="text-sm font-medium text-sidebar-foreground">TunnelDeck</span>
         </div>
       </div>
 
-      <nav className="flex-1 p-3">
-        <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/30">
-          Navigation
-        </p>
+      <nav className="flex-1 px-3 pb-3">
         <ul className="space-y-0.5">
           {navItems.map((item) => (
             <li key={item.to}>
@@ -58,18 +50,19 @@ function SidebarContent({ user, logout, onNavClick }: SidebarContentProps) {
         </ul>
       </nav>
 
-      <div className="shrink-0 border-t border-sidebar-border p-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
-            <User className="h-3.5 w-3.5 text-muted-foreground" />
-          </div>
+      <div className="shrink-0 border-t border-sidebar-border px-4 py-3">
+        <div className="flex items-center gap-2.5">
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] text-sidebar-foreground/50">Signed in as</p>
-            <p className="truncate text-xs font-medium text-sidebar-foreground">{user?.email ?? 'Unknown'}</p>
+            <p className="truncate text-xs text-muted-foreground">{user?.email ?? 'Unknown'}</p>
           </div>
-          <Button className="h-8 w-8 shrink-0 text-muted-foreground" onClick={logout} size="icon" title="Logout" variant="ghost">
+          <button
+            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            onClick={logout}
+            title="Logout"
+            type="button"
+          >
             <LogOut className="h-3.5 w-3.5" />
-          </Button>
+          </button>
         </div>
       </div>
     </div>
@@ -86,7 +79,7 @@ export function AppShell() {
   return (
     <div className="flex min-h-svh">
       {/* Desktop sidebar */}
-      <aside className="hidden w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar lg:flex">
+      <aside className="hidden w-56 shrink-0 flex-col border-r border-sidebar-border bg-sidebar lg:flex">
         <SidebarContent logout={logout} user={user} />
       </aside>
 
@@ -95,14 +88,18 @@ export function AppShell() {
         <div className="fixed inset-0 z-50 lg:hidden">
           <div
             aria-hidden
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-black"
             onClick={() => setSidebarOpen(false)}
           />
-          <aside className="absolute inset-y-0 left-0 flex w-64 flex-col border-r border-sidebar-border bg-sidebar shadow-2xl">
-            <div className="flex h-14 shrink-0 items-center justify-end border-b border-sidebar-border px-4">
-              <Button onClick={() => setSidebarOpen(false)} size="icon" variant="ghost">
+          <aside className="absolute inset-y-0 left-0 flex w-56 flex-col border-r border-sidebar-border bg-sidebar">
+            <div className="flex h-14 shrink-0 items-center justify-end px-4">
+              <button
+                className="rounded-md p-1.5 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                onClick={() => setSidebarOpen(false)}
+                type="button"
+              >
                 <X className="h-4 w-4" />
-              </Button>
+              </button>
             </div>
             <SidebarContent logout={logout} onNavClick={() => setSidebarOpen(false)} user={user} />
           </aside>
@@ -112,21 +109,16 @@ export function AppShell() {
       {/* Main area */}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Header */}
-        <header className="flex h-14 shrink-0 items-center border-b border-border bg-background/95 px-4 backdrop-blur-sm lg:px-6">
-          <Button
-            className="mr-3 h-8 w-8 text-muted-foreground lg:hidden"
+        <header className="flex h-14 shrink-0 items-center border-b border-border px-4 lg:px-6">
+          <button
+            className="mr-3 rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground lg:hidden"
             onClick={() => setSidebarOpen(true)}
-            size="icon"
-            variant="ghost"
+            type="button"
           >
             <Menu className="h-4 w-4" />
-          </Button>
+          </button>
 
-          <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm">
-            <span className="text-muted-foreground">TunnelDeck</span>
-            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/40" />
-            <span className="font-medium text-foreground">{segment}</span>
-          </nav>
+          <span className="text-sm font-medium text-foreground">{segment}</span>
 
           <div className="ml-auto lg:hidden">
             <Button className="gap-1.5 text-xs" onClick={logout} size="sm" variant="ghost">

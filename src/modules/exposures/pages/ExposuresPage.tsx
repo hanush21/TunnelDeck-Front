@@ -4,7 +4,6 @@ import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { getContainers } from '@/modules/containers/services/containers-service'
 import { ExposureFormDialog } from '@/modules/exposures/components/ExposureFormDialog'
@@ -30,8 +29,8 @@ type PendingAction =
 
 const enabledBadge = (enabled: boolean) =>
   enabled
-    ? { variant: 'secondary' as const, className: 'bg-emerald-500/15 text-emerald-700 ring-1 ring-emerald-500/20' }
-    : { variant: 'outline' as const, className: 'border-zinc-400/30 bg-zinc-500/10 text-zinc-600' }
+    ? { variant: 'secondary' as const, className: 'bg-emerald-50 text-emerald-700 border border-emerald-200' }
+    : { variant: 'outline' as const, className: 'bg-secondary text-muted-foreground border-border' }
 
 export function ExposuresPage() {
   const queryClient = useQueryClient()
@@ -140,14 +139,14 @@ export function ExposuresPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-foreground">Exposures</h1>
+          <h1 className="text-base font-medium text-foreground">Exposures</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">Manage public hostnames and container mappings.</p>
         </div>
 
-        <Button className="gap-2" disabled={isMutating} onClick={() => setIsCreateOpen(true)} size="sm">
-          <Plus className="h-4 w-4" />
+        <Button className="gap-1.5 text-xs" disabled={isMutating} onClick={() => setIsCreateOpen(true)} size="sm">
+          <Plus className="h-3.5 w-3.5" />
           New exposure
         </Button>
       </div>
@@ -163,73 +162,71 @@ export function ExposuresPage() {
           title="No exposures"
         />
       ) : (
-        <Card className="border-border bg-card">
-          <CardHeader className="border-b border-border px-5 py-4">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              {exposuresQuery.data.length} exposure{exposuresQuery.data.length !== 1 ? 's' : ''} configured
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-b border-border hover:bg-transparent">
-                    <TableHead className="pl-5 text-xs">Hostname</TableHead>
-                    <TableHead className="text-xs">Service</TableHead>
-                    <TableHead className="text-xs">Container</TableHead>
-                    <TableHead className="text-xs">Target</TableHead>
-                    <TableHead className="text-xs">Status</TableHead>
-                    <TableHead className="pr-5 text-xs">Actions</TableHead>
+        <div className="rounded-lg border border-border bg-card">
+          <div className="border-b border-border px-5 py-3">
+            <p className="text-xs text-muted-foreground">
+              {exposuresQuery.data.length} exposure{exposuresQuery.data.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-b border-border hover:bg-transparent">
+                  <TableHead className="pl-5 text-xs">Hostname</TableHead>
+                  <TableHead className="text-xs">Service</TableHead>
+                  <TableHead className="text-xs">Container</TableHead>
+                  <TableHead className="text-xs">Target</TableHead>
+                  <TableHead className="text-xs">Status</TableHead>
+                  <TableHead className="pr-5 text-xs">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {exposuresQuery.data.map((exposure) => (
+                  <TableRow className="border-b border-border hover:bg-accent" key={exposure.id}>
+                    <TableCell className="pl-5 font-mono text-sm">{exposure.hostname}</TableCell>
+                    <TableCell>
+                      <span className="rounded border border-border px-1.5 py-0.5 font-mono text-xs uppercase text-muted-foreground">
+                        {exposure.protocol}
+                      </span>
+                    </TableCell>
+                    <TableCell className="font-mono text-xs text-muted-foreground">{exposure.containerName}</TableCell>
+                    <TableCell className="font-mono text-xs text-muted-foreground">
+                      {exposure.targetHost}:{exposure.port}
+                    </TableCell>
+                    <TableCell>
+                      <Badge {...enabledBadge(exposure.enabled)}>{exposure.enabled ? 'Enabled' : 'Disabled'}</Badge>
+                    </TableCell>
+                    <TableCell className="pr-5">
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground disabled:opacity-40"
+                          disabled={isMutating}
+                          onClick={() => setEditingExposure(exposure)}
+                          type="button"
+                        >
+                          <Pencil className="h-3 w-3" />
+                          Edit
+                        </button>
+                        <button
+                          className="flex items-center gap-1.5 rounded-md border border-red-200 px-2 py-1 text-xs text-red-600 transition-colors hover:bg-red-50 disabled:opacity-40"
+                          disabled={isMutating}
+                          onClick={() => {
+                            setPendingAction({ type: 'delete', id: exposure.id, hostname: exposure.hostname })
+                            setIsTotpOpen(true)
+                          }}
+                          type="button"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                          Delete
+                        </button>
+                      </div>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {exposuresQuery.data.map((exposure) => (
-                    <TableRow className="border-b border-border/50" key={exposure.id}>
-                      <TableCell className="pl-5 font-mono text-sm font-medium">{exposure.hostname}</TableCell>
-                      <TableCell>
-                        <span className="rounded border border-border bg-muted/50 px-1.5 py-0.5 font-mono text-xs uppercase text-muted-foreground">
-                          {exposure.protocol}
-                        </span>
-                      </TableCell>
-                      <TableCell className="font-mono text-xs text-muted-foreground">{exposure.containerName}</TableCell>
-                      <TableCell className="font-mono text-xs text-muted-foreground">
-                        {exposure.targetHost}:{exposure.port}
-                      </TableCell>
-                      <TableCell>
-                        <Badge {...enabledBadge(exposure.enabled)}>{exposure.enabled ? 'Enabled' : 'Disabled'}</Badge>
-                      </TableCell>
-                      <TableCell className="pr-5">
-                        <div className="flex items-center gap-2">
-                          <Button
-                            className="h-7 gap-1.5 px-2 text-xs"
-                            disabled={isMutating}
-                            onClick={() => setEditingExposure(exposure)}
-                            variant="outline"
-                          >
-                            <Pencil className="h-3 w-3" />
-                            Edit
-                          </Button>
-                          <Button
-                            className="h-7 gap-1.5 px-2 text-xs"
-                            disabled={isMutating}
-                            onClick={() => {
-                              setPendingAction({ type: 'delete', id: exposure.id, hostname: exposure.hostname })
-                              setIsTotpOpen(true)
-                            }}
-                            variant="destructive"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                            Delete
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
       )}
 
       <ExposureFormDialog

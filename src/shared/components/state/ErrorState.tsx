@@ -1,6 +1,5 @@
 import { AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 type ErrorStateProps = {
   title?: string
@@ -14,21 +13,19 @@ export function ErrorState({
   onRetry,
 }: ErrorStateProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-destructive">
-          <AlertCircle className="h-5 w-5" />
-          {title}
-        </CardTitle>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      {onRetry ? (
-        <CardContent>
-          <Button onClick={onRetry} variant="outline">
-            Retry
-          </Button>
-        </CardContent>
-      ) : null}
-    </Card>
+    <div className="rounded-lg border border-border bg-card p-5">
+      <div className="flex items-start gap-3">
+        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
+        <div className="space-y-1">
+          <p className="text-sm font-medium text-foreground">{title}</p>
+          <p className="text-sm text-muted-foreground">{description}</p>
+          {onRetry ? (
+            <Button className="mt-2" onClick={onRetry} size="sm" variant="outline">
+              Retry
+            </Button>
+          ) : null}
+        </div>
+      </div>
+    </div>
   )
 }

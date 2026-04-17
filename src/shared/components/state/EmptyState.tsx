@@ -1,5 +1,4 @@
 import { Inbox } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 type EmptyStateProps = {
   title: string
@@ -9,15 +8,11 @@ type EmptyStateProps = {
 
 export function EmptyState({ title, description, action }: EmptyStateProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Inbox className="h-5 w-5 text-muted-foreground" />
-          {title}
-        </CardTitle>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      {action ? <CardContent>{action}</CardContent> : null}
-    </Card>
+    <div className="rounded-lg border border-border bg-card p-8 text-center">
+      <Inbox className="mx-auto h-8 w-8 text-muted-foreground/40" />
+      <p className="mt-3 text-sm font-medium text-foreground">{title}</p>
+      <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+      {action ? <div className="mt-4">{action}</div> : null}
+    </div>
   )
 }

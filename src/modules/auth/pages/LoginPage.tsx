@@ -49,70 +49,53 @@ export function LoginPage() {
 
   return (
     <div className="flex min-h-svh">
-      {/* Left panel - branding */}
-      <div className="hidden flex-1 flex-col justify-between border-r border-sidebar-border bg-sidebar p-10 lg:flex">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sidebar-primary">
-            <Shield className="h-5 w-5 text-sidebar-primary-foreground" />
-          </div>
-          <div>
-            <p className="font-semibold leading-none text-sidebar-foreground">TunnelDeck</p>
-            <p className="mt-0.5 text-xs text-sidebar-foreground/50">Control Panel</p>
-          </div>
+      {/* Left panel */}
+      <div className="hidden flex-1 flex-col justify-between border-r border-border bg-card px-10 py-12 lg:flex">
+        <div className="flex items-center gap-2.5">
+          <Shield className="h-5 w-5 text-muted-foreground" />
+          <span className="text-sm font-medium text-foreground">TunnelDeck</span>
         </div>
 
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-sidebar-foreground">Secure Exposure Console</h1>
-            <p className="mt-3 text-sidebar-foreground/60">
-              Minimal, reliable, backend-authorized control plane for service exposure.
-            </p>
-          </div>
-
-          <div className="space-y-3 rounded-lg border border-sidebar-border bg-sidebar-accent p-5">
-            <p className="text-sm font-medium text-sidebar-foreground">Security model</p>
-            <ul className="space-y-3">
-              <li className="flex items-start gap-3 text-sm text-sidebar-foreground/70">
-                <Lock className="mt-0.5 h-4 w-4 shrink-0 text-sidebar-primary" />
-                Backend validates Firebase ID token against an admin allowlist.
-              </li>
-              <li className="flex items-start gap-3 text-sm text-sidebar-foreground/70">
-                <Shield className="mt-0.5 h-4 w-4 shrink-0 text-sidebar-primary" />
-                Critical mutations are protected with TOTP verification.
-              </li>
-              <li className="flex items-start gap-3 text-sm text-sidebar-foreground/70">
-                <Mail className="mt-0.5 h-4 w-4 shrink-0 text-sidebar-primary" />
-                No user management or signup is exposed in this panel.
-              </li>
-            </ul>
-          </div>
+        <div className="space-y-4">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Secure Exposure Console</h1>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Backend-authorized control plane for Docker service exposure via Cloudflare tunnels.
+          </p>
+          <ul className="space-y-2 pt-2">
+            <li className="flex items-center gap-2.5 text-sm text-muted-foreground">
+              <Lock className="h-3.5 w-3.5 shrink-0" />
+              Firebase ID token validated against admin allowlist
+            </li>
+            <li className="flex items-center gap-2.5 text-sm text-muted-foreground">
+              <Shield className="h-3.5 w-3.5 shrink-0" />
+              Mutations gated behind TOTP verification
+            </li>
+            <li className="flex items-center gap-2.5 text-sm text-muted-foreground">
+              <Mail className="h-3.5 w-3.5 shrink-0" />
+              No signup — admin accounts only
+            </li>
+          </ul>
         </div>
 
-        <p className="text-xs text-sidebar-foreground/30">Only trusted admin accounts can access this panel.</p>
+        <p className="text-xs text-muted-foreground">Only trusted admin accounts can access this panel.</p>
       </div>
 
       {/* Right panel - login form */}
-      <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 lg:max-w-md">
-        <div className="w-full max-w-sm space-y-8">
-          {/* Mobile logo */}
-          <div className="flex items-center gap-3 lg:hidden">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-              <Shield className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <div>
-              <p className="font-semibold leading-none text-foreground">TunnelDeck</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">Control Panel</p>
-            </div>
+      <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 lg:max-w-sm">
+        <div className="w-full max-w-xs space-y-7">
+          <div className="flex items-center gap-2.5 lg:hidden">
+            <Shield className="h-5 w-5 text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground">TunnelDeck</span>
           </div>
 
           <div>
-            <h2 className="text-2xl font-bold text-foreground">Sign in</h2>
+            <h2 className="text-xl font-semibold text-foreground">Sign in</h2>
             <p className="mt-1 text-sm text-muted-foreground">Authenticate with your admin account.</p>
           </div>
 
-          <form className="space-y-4" onSubmit={onSubmit}>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email address</Label>
+          <form className="space-y-3" onSubmit={onSubmit}>
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="text-sm text-muted-foreground">Email</Label>
               <Input
                 autoComplete="email"
                 id="email"
@@ -123,8 +106,8 @@ export function LoginPage() {
               {errors.email ? <p className="text-xs text-destructive">{errors.email.message}</p> : null}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="password" className="text-sm text-muted-foreground">Password</Label>
               <Input
                 autoComplete="current-password"
                 id="password"
@@ -136,7 +119,7 @@ export function LoginPage() {
             </div>
 
             <Button className="w-full" disabled={isSubmitting} type="submit">
-              {isSubmitting ? 'Signing in...' : 'Sign in with email'}
+              {isSubmitting ? 'Signing in...' : 'Sign in'}
             </Button>
           </form>
 
@@ -145,17 +128,13 @@ export function LoginPage() {
               <span className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-xs">
-              <span className="bg-background px-3 text-muted-foreground">or continue with</span>
+              <span className="bg-background px-3 text-muted-foreground">or</span>
             </div>
           </div>
 
           <Button className="w-full" onClick={handleGoogleSignIn} type="button" variant="outline">
             Continue with Google
           </Button>
-
-          <p className="text-center text-xs text-muted-foreground/60">
-            Only authorized admin accounts can access this application.
-          </p>
         </div>
       </div>
     </div>

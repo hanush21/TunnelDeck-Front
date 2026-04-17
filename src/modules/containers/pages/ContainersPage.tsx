@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { getContainers } from '@/modules/containers/services/containers-service'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { EmptyState } from '@/shared/components/state/EmptyState'
 import { ErrorState } from '@/shared/components/state/ErrorState'
@@ -14,14 +13,14 @@ const statusVariant = (status: string) => {
   const normalized = status.toLowerCase()
 
   if (normalized.includes('up') || normalized.includes('running')) {
-    return { variant: 'secondary' as const, className: 'bg-emerald-500/15 text-emerald-700 ring-1 ring-emerald-500/20' }
+    return { variant: 'secondary' as const, className: 'bg-emerald-50 text-emerald-700 border border-emerald-200' }
   }
 
   if (normalized.includes('paused') || normalized.includes('restarting')) {
-    return { variant: 'outline' as const, className: 'border-amber-500/30 bg-amber-500/10 text-amber-700' }
+    return { variant: 'outline' as const, className: 'bg-amber-50 text-amber-700 border border-amber-200' }
   }
 
-  return { variant: 'destructive' as const, className: 'bg-red-500/15 text-red-700 ring-1 ring-red-500/20' }
+  return { variant: 'destructive' as const, className: 'bg-red-50 text-red-700 border border-red-200' }
 }
 
 export function ContainersPage() {
@@ -52,49 +51,47 @@ export function ContainersPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-foreground">Containers</h1>
+        <h1 className="text-base font-medium text-foreground">Containers</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">
-          Pick a container from this list when creating or editing exposures.
+          Pick a container when creating or editing exposures.
         </p>
       </div>
 
-      <Card className="border-border bg-card">
-        <CardHeader className="border-b border-border px-5 py-4">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            {containersQuery.data.length} container{containersQuery.data.length !== 1 ? 's' : ''} found
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-b border-border hover:bg-transparent">
-                  <TableHead className="pl-5 text-xs">Name</TableHead>
-                  <TableHead className="text-xs">Image</TableHead>
-                  <TableHead className="text-xs">Status</TableHead>
-                  <TableHead className="text-xs">Ports</TableHead>
-                  <TableHead className="pr-5 text-xs">Uptime</TableHead>
+      <div className="rounded-lg border border-border bg-card">
+        <div className="border-b border-border px-5 py-3">
+          <p className="text-xs text-muted-foreground">
+            {containersQuery.data.length} container{containersQuery.data.length !== 1 ? 's' : ''}
+          </p>
+        </div>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-b border-border hover:bg-transparent">
+                <TableHead className="pl-5 text-xs">Name</TableHead>
+                <TableHead className="text-xs">Image</TableHead>
+                <TableHead className="text-xs">Status</TableHead>
+                <TableHead className="text-xs">Ports</TableHead>
+                <TableHead className="pr-5 text-xs">Uptime</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {containersQuery.data.map((container) => (
+                <TableRow className="border-b border-border hover:bg-accent" key={container.id}>
+                  <TableCell className="pl-5 font-mono text-sm">{container.name}</TableCell>
+                  <TableCell className="font-mono text-xs text-muted-foreground">{container.image}</TableCell>
+                  <TableCell>
+                    <Badge {...statusVariant(container.status)}>{container.status}</Badge>
+                  </TableCell>
+                  <TableCell className="font-mono text-xs text-muted-foreground">
+                    {container.ports.length > 0 ? container.ports.join(', ') : '—'}
+                  </TableCell>
+                  <TableCell className="pr-5 text-xs text-muted-foreground">{container.uptime}</TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {containersQuery.data.map((container) => (
-                  <TableRow className="border-b border-border/50" key={container.id}>
-                    <TableCell className="pl-5 font-mono text-sm font-medium">{container.name}</TableCell>
-                    <TableCell className="font-mono text-xs text-muted-foreground">{container.image}</TableCell>
-                    <TableCell>
-                      <Badge {...statusVariant(container.status)}>{container.status}</Badge>
-                    </TableCell>
-                    <TableCell className="font-mono text-xs text-muted-foreground">
-                      {container.ports.length > 0 ? container.ports.join(', ') : '—'}
-                    </TableCell>
-                    <TableCell className="pr-5 text-sm text-muted-foreground">{container.uptime}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
     </div>
   )
 }
